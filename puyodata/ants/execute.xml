@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="game" default="all" basedir=".">
+	<property file="jar.properties" />
+	<target name="all" depends="compile,jar" />
+	<target name="compile">
+		<delete dir="${project.dir}/bin" />
+		<mkdir dir="${project.dir}/bin" />
+		<javac destdir="${project.dir}/bin" classpath="${project.dir}/lib/gson-2.3.1.jar" source="1.8" encoding="UTF-8">
+			<src path="${project.dir}/src" />
+		</javac>
+	</target>
+	<target name="jar">
+		<jar basedir="${project.dir}/bin" jarfile="${project.dir}/jar/puyo-data.jar"/>
+	</target>
+</project>
