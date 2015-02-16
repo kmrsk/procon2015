@@ -228,6 +228,9 @@ public class PuyoPuyoMaster {
 					actionMap.put(box.getName(), null);
 				} else {
 					box.getCurrentPuyo().setRow(row + 1);
+					if (box.getCurrentPuyo().getRotate() == Rotate.R0 && row >= Box.ROW - 2) {
+						box.getCurrentPuyo().setRotate(action.getState().getRotate());
+					}
 				}
 			} else if (row > trow) {
 				int[] pos1 = box.getCurrentPuyo().getPuyoPosition(0);
@@ -261,10 +264,14 @@ public class PuyoPuyoMaster {
 		}
 		int[] pos1 = box.getCurrentPuyo().getPuyoPosition(0);
 		int[] pos2 = box.getCurrentPuyo().getPuyoPosition(1);
-		puyoArray[pos1[0]][pos1[1]].puyo = box.getCurrentPuyo().getCluster().getFirst();
-		puyoArray[pos1[0]][pos1[1]].type = PuyoType.FALL;
-		puyoArray[pos2[0]][pos2[1]].puyo = box.getCurrentPuyo().getCluster().getSecond();
-		puyoArray[pos2[0]][pos2[1]].type = PuyoType.FALL;
+		if (pos1[1] < Box.RANK) {
+			puyoArray[pos1[0]][pos1[1]].puyo = box.getCurrentPuyo().getCluster().getFirst();
+			puyoArray[pos1[0]][pos1[1]].type = PuyoType.FALL;
+		}
+		if (pos2[1] < Box.RANK) {
+			puyoArray[pos2[0]][pos2[1]].puyo = box.getCurrentPuyo().getCluster().getSecond();
+			puyoArray[pos2[0]][pos2[1]].type = PuyoType.FALL;
+		}
 	}
 
 	private void updatePuyoFromPuyoArray(Box box, PuyoEx[][] puyoArray) {
