@@ -30,6 +30,7 @@ public class PuyoPain extends JPanel {
 	private BufferedImage win;
 	private BufferedImage lose;
 	private BufferedImage puyopuyobg;
+	private BufferedImage number;
 
 	public PuyoPain() {
 		initialize();
@@ -90,10 +91,25 @@ public class PuyoPain extends JPanel {
 		drawPainBox(master.getGame().getBox2(), master.getPuyoArray2(), 300, master.getLoser());
 		drawNext(master.getGame().getBox2(), 265);
 		drawChain(master.getGame().getBox2(), 300);
+		drawNumber(200, master.getGame().getBox1().getScore());
+		drawNumber(450, master.getGame().getBox2().getScore());
 		repaint();
 	}
 
-	public void drawChain(Box box, int x) {
+	private void drawNumber(int x, int score) {
+		BufferedImage num = getNumber();
+		int[] digits = new int[] { 0, 0, 0, 0, 0, 0 };
+		int exp10 = 1;
+		for (int i = 0; i < 6; i++) {
+			digits[i] = (score / exp10) % 10;
+			exp10 *= 10;
+		}
+		for (int i = 0; i < 6; i++) {
+			drawImage(num, 15 * (digits[i] % 5), 20 * (digits[i] / 5), 15, 20, x - (15 * i) - 15, 378, 15, 20);
+		}
+	}
+
+	private void drawChain(Box box, int x) {
 		if (box.getState() == BoxState.EFFECT) {
 			BufferedImage img = getChainImage(box.getChainCount());
 			if (img != null) {
@@ -102,14 +118,14 @@ public class PuyoPain extends JPanel {
 		}
 	}
 
-	public void drawNext(Box box, int x) {
+	private void drawNext(Box box, int x) {
 		if (box.getNextPuyo() != null) {
 			drawPuyoImage(box.getNextPuyo().getFirst(), x, 115);
 			drawPuyoImage(box.getNextPuyo().getSecond(), x, 115 + 25);
 		}
 	}
 
-	public void drawPainBox(Box box, PuyoPuyoMaster.PuyoEx[][] puyoArray, int x, String loser) {
+	private void drawPainBox(Box box, PuyoPuyoMaster.PuyoEx[][] puyoArray, int x, String loser) {
 		drawText(box.getName(), 0xffffffff, x, 45);
 		for (int i = 0; i < Box.ROW; i++) {
 			for (int j = 0; j < Box.RANK; j++) {
@@ -131,7 +147,7 @@ public class PuyoPain extends JPanel {
 		}
 	}
 
-	public void clear(int rgba) {
+	private void clear(int rgba) {
 		Graphics2D g2 = getGraphics2D();
 		int argb = RGBA2ARGB(rgba);
 		g2.setBackground(new Color(argb, true));
@@ -228,6 +244,13 @@ public class PuyoPain extends JPanel {
 			puyopuyobg = loadImage("puyopuyobg.png");
 		}
 		return puyopuyobg;
+	}
+
+	private BufferedImage getNumber() {
+		if (number == null) {
+			number = loadImage("number.png");
+		}
+		return number;
 	}
 
 	private BufferedImage getPuyoImage(Puyo puyo) {

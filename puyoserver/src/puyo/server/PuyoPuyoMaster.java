@@ -1,10 +1,16 @@
 package puyo.server;
 
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
+import java.util.Set;
 
 import puyo.common.Pair;
 import puyo.common.Tuple;
@@ -24,6 +30,13 @@ public class PuyoPuyoMaster {
 
 	public static final int FALL_MAX = 30;
 	private static final int EFFECT_MAX = 10;
+
+	public static final int[] CHAIN_BONUS = { 0, 8, 16, 32, 64, 96, 128, 160, 192, 224, 256, 288, 320, 352, 384, 416,
+			448,
+			480, 512 };
+	public static final int[] CONNECT_BONUS = { 0, 0, 0, 0, 0, 2, 3, 4, 5, 6, 7, 10, 10, 10, 10, 10, 10, 10, 10, 10,
+			10, 10, 10, 10, 10, 10, 10 };
+	public static final int[] COLOR_BONUS = { 0, 0, 3, 6, 12, 24 };
 
 	private enum State {
 		READY, GAMING, END
@@ -168,6 +181,7 @@ public class PuyoPuyoMaster {
 						box.setChainCount(box.getChainCount() + 1);
 						box.setState(BoxState.EFFECT);
 						box.setEffectCount(EFFECT_MAX);
+						box.setScore(box.getScore() + e);
 					} else if (isEnd(box, puyoArray)) {
 						loser = box.getName();
 						box.setChainCount(0);
@@ -333,86 +347,96 @@ public class PuyoPuyoMaster {
 		}
 	}
 
+	// スコア
 	private int erase(Box box, PuyoEx[][] puyoArray) {
 		// 消去処理
 
 		// 計算用の配列作成
-		Puyo[][] tmparr = new Puyo[Box.ROW + 2][Box.RANK + 2];
-		for (int i = 0; i < Box.ROW + 2; i++) {
-			for (int j = 0; j < Box.RANK + 2; j++) {
-				if (i == 0 || i == Box.ROW + 1) {
-					tmparr[i][j] = Puyo.NONE;
-				} else if (j == 0 || j == Box.RANK + 1) {
-					tmparr[i][j] = Puyo.NONE;
-				} else {
-					tmparr[i][j] = puyoArray[i - 1][j - 1].puyo;
-				}
+		Puyo[] tmparr = new Puyo[Box.ROW * Box.RANK];
+		for (int i = 0; i < Box.ROW; i++) {
+			for (int j = 0; j < Box.RANK; j++) {
+				tmparr[i + j * Box.ROW] = puyoArray[i][j].puyo;
 			}
 		}
-
-		// カウンタ配列
-		int[][] coun = new int[Box.ROW + 2][Box.RANK + 2];
-		// 以下の規則に従って値を設定
-		// Puyo.NONE の場合、0
-		// Puyo.NONE 以外の場合、隣接する同色ぷよの数+1
-		for (int i = 0; i < Box.ROW + 2; i++) {
-			for (int j = 0; j < Box.RANK + 2; j++) {
-				if (tmparr[i][j] == Puyo.NONE) {
-					coun[i][j] = 0;
-				} else {
-					coun[i][j] = 1;
-					coun[i][j] += (tmparr[i + 1][j] == tmparr[i][j] ? 1 : 0);
-					coun[i][j] += (tmparr[i - 1][j] == tmparr[i][j] ? 1 : 0);
-					coun[i][j] += (tmparr[i][j + 1] == tmparr[i][j] ? 1 : 0);
-					coun[i][j] += (tmparr[i][j - 1] == tmparr[i][j] ? 1 : 0);
-				}
-			}
-		}
-		// 自分に隣接する位置に同色で4以上のものがある→自分と隣接する同色を4に設定
-		// 自分が3以上でかつ自分に隣接する位置に同色で3以上のものがある→自分と隣接する同色を4に設定
-		for (int i = 0; i < Box.ROW + 2; i++) {
-			for (int j = 0; j < Box.RANK + 2; j++) {
-				boolean flag = false;
-				if (coun[i][j] >= 4) {
-					flag = true;
-				} else if (coun[i][j] >= 3) {
-					flag |= (tmparr[i + 1][j] == tmparr[i][j] && coun[i + 1][j] >= 3);
-					flag |= (tmparr[i - 1][j] == tmparr[i][j] && coun[i - 1][j] >= 3);
-					flag |= (tmparr[i][j + 1] == tmparr[i][j] && coun[i][j + 1] >= 3);
-					flag |= (tmparr[i][j - 1] == tmparr[i][j] && coun[i][j - 1] >= 3);
-				} else if (coun[i][j] >= 1) {
-					flag |= (tmparr[i + 1][j] == tmparr[i][j] && coun[i + 1][j] >= 4);
-					flag |= (tmparr[i - 1][j] == tmparr[i][j] && coun[i - 1][j] >= 4);
-					flag |= (tmparr[i][j + 1] == tmparr[i][j] && coun[i][j + 1] >= 4);
-					flag |= (tmparr[i][j - 1] == tmparr[i][j] && coun[i][j - 1] >= 4);
-				} else {
-				}
-				if (flag) {
-					coun[i][j] = 4;
-					if (tmparr[i + 1][j] == tmparr[i][j])
-						coun[i + 1][j] = 4;
-					if (tmparr[i - 1][j] == tmparr[i][j])
-						coun[i - 1][j] = 4;
-					if (tmparr[i][j + 1] == tmparr[i][j])
-						coun[i][j + 1] = 4;
-					if (tmparr[i][j - 1] == tmparr[i][j])
-						coun[i][j - 1] = 4;
-				}
-			}
-		}
+		int index = 0;
+		// 消したぷよの総数
 		int count = 0;
-		// 4以上になっているぷよを消去
-		for (int i = 1; i < Box.ROW + 1; i++) {
-			for (int j = 1; j < Box.RANK + 1; j++) {
-				if (coun[i][j] >= 4) {
-					puyoArray[i - 1][j - 1].puyo = Puyo.NONE;
-					puyoArray[i - 1][j - 1].type = PuyoType.STATIC;
-					count++;
+		// 色数
+		Set<Puyo> set = new HashSet<>();
+		// 連結ボーナス
+		int connBonus = 0;
+		while (index < Box.ROW * Box.RANK) {
+			Puyo p = tmparr[index];
+			if (p == Puyo.NONE) {
+			} else {
+				Set<Integer> founded = search(index, tmparr);
+				if (founded.size() >= 4) {
+					for (int i : founded) {
+						count++;
+						set.add(tmparr[i]);
+						tmparr[i] = Puyo.NONE;
+						puyoArray[i % Box.ROW][i / Box.ROW].puyo = Puyo.NONE;
+					}
+					connBonus += CONNECT_BONUS[founded.size()];
 				}
 			}
+			index++;
 		}
 		updatePuyoArray(box, puyoArray);
-		return count;
+
+		// スコア計算
+		int score = count * (CHAIN_BONUS[box.getChainCount()] + COLOR_BONUS[set.size()] + connBonus);
+		if (score <= 0) {
+			score = count;
+		}
+		return score * 10;
+	}
+
+	private Set<Integer> search(int index, Puyo[] tmparr) {
+		Puyo p = tmparr[index];
+		// 探索結果indexセット
+		Set<Integer> founded = new HashSet<>();
+		// 探索済みindexセット
+		Set<Integer> searched = new HashSet<>();
+		// 探索候補キュー
+		Queue<Integer> que = new LinkedList<>();
+		// 幅優先探索を行う
+		que.offer(index);
+		searched.add(index);
+		while (!que.isEmpty()) {
+			int i = que.poll();
+			if (tmparr[i] != p) {
+				continue;
+			}
+			founded.add(i);
+			int row = i % Box.ROW;
+			int rank = i / Box.ROW;
+			List<Integer> near = new ArrayList<>();
+			// 右隣(右端以外の場合)
+			if (row < Box.ROW - 1) {
+				near.add(i + 1);
+			}
+			// 左隣(左端以外の場合)
+			if (row > 0) {
+				near.add(i - 1);
+			}
+			// 上隣(上端以外の場合)
+			if (rank < Box.RANK - 1) {
+				near.add(i + Box.ROW);
+			}
+			// 下隣(下端以外の場合)
+			if (rank > 0) {
+				near.add(i - Box.ROW);
+			}
+			for (int n : near) {
+				// 探索済みでない場合
+				if (!searched.contains(n)) {
+					que.offer(n);
+					searched.add(n);
+				}
+			}
+		}
+		return founded;
 	}
 
 	private void next(Box box) {
@@ -474,16 +498,42 @@ public class PuyoPuyoMaster {
 		return users.stream().anyMatch(u -> u.getName().equals(name));
 	}
 
+	private String createToken(User user) {
+		MessageDigest md;
+		try {
+			md = MessageDigest.getInstance("MD5");
+			byte[] data = user.getName().getBytes();
+			md.update(data);
+			byte[] digest = md.digest();
+			StringBuilder sb = new StringBuilder();
+			for (int i = 0; i < digest.length; i++) {
+				int b = (0xFF & digest[i]);
+				if (b < 16)
+					sb.append("0");
+				sb.append(Integer.toHexString(b));
+			}
+			return sb.toString();
+		} catch (NoSuchAlgorithmException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
 	public void receiveLogin(String ip, Message message) {
 		int port = message.getUser().getPort();
+		User user = message.getUser();
 		switch (state) {
 		case READY:
 			if (users.size() < 2) {
-				if (!isLogined(message.getUser().getName())) {
-					message.getUser().setIp(ip);
-					users.add(message.getUser());
+				if (!isLogined(user.getName())) {
+					user.setIp(ip);
+					user.setPassword(createToken(user));
+					users.add(user);
+				} else {
+					final String name = user.getName();
+					user = users.stream().filter(u -> u.getName().equals(name)).findFirst().orElse(null);
 				}
 				Message response = new Message(MessageId.LOGIN_OK);
+				response.setUser(user);
 				send(ip, port, response);
 				if (users.size() == 2) {
 					state = State.GAMING;
@@ -504,13 +554,15 @@ public class PuyoPuyoMaster {
 		int port = message.getUser().getPort();
 		switch (state) {
 		case GAMING:
-			if (checkAction(message)) {
-				User user = message.getUser();
-				Action action = message.getAction();
-				actionMap.put(user.getName(), action);
-				Message response = new Message(MessageId.ACTION_OK);
-				send(ip, port, response);
-				return;
+			if (register(message.getUser())) {
+				if (checkAction(message)) {
+					User user = message.getUser();
+					Action action = message.getAction();
+					actionMap.put(user.getName(), action);
+					Message response = new Message(MessageId.ACTION_OK);
+					send(ip, port, response);
+					return;
+				}
 			}
 			break;
 		default:
@@ -518,6 +570,21 @@ public class PuyoPuyoMaster {
 		}
 		Message response = new Message(MessageId.ACTION_NG);
 		send(ip, port, response);
+	}
+
+	/**
+	 * @return true:認証OK false:認証NG
+	 */
+	private boolean register(User user) {
+		if (user == null) {
+			return false;
+		}
+		if (!users.stream().anyMatch(u -> (
+				u.getName().equals(user.getName()) && u.getPassword().equals(user.getPassword())
+				))) {
+			return false;
+		}
+		return true;
 	}
 
 	/**

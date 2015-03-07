@@ -60,7 +60,7 @@ public class PuyoPuyoClient {
 		switch (message.getId()) {
 		case LOGIN_OK:
 			state = State.LOGIN;
-			// パスワードの設定 TODO
+			user = message.getUser();
 			break;
 		case LOGIN_NG:
 			break;

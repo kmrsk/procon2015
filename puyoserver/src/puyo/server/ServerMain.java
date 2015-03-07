@@ -32,6 +32,7 @@ public enum ServerMain {
 			DatagramPacket packet = new DatagramPacket(buf, buf.length, inetAddress, port);
 			sendSocket.send(packet);
 			sendSocket.close();
+			//System.out.println(msg);
 		}
 		master.getSendBox().clear();
 	}
@@ -54,6 +55,7 @@ public enum ServerMain {
 		String[] tokens = sockAddress.toString().split(":");
 		String ip = tokens[0].substring(1);
 		master.getReceivedBox().add(new Pair<>(ip, message));
+		//System.out.println(msg);
 	}
 
 	public void setPort(int port) {

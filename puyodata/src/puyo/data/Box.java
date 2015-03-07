@@ -16,6 +16,7 @@ public class Box {
 	private BoxState state;
 	private int sequence;
 	private PuyoState currentPuyo;
+	private int score;
 	private int fallCount;
 	private int effectCount;
 	private int chainCount;
@@ -56,6 +57,14 @@ public class Box {
 
 	public void setCurrentPuyo(PuyoState currentPuyo) {
 		this.currentPuyo = currentPuyo;
+	}
+
+	public int getScore() {
+		return score;
+	}
+
+	public void setScore(int score) {
+		this.score = score;
 	}
 
 	public int getFallCount() {
