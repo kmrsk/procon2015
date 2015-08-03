@@ -274,6 +274,9 @@ public class PuyoPain extends JPanel {
 			case GREEN:
 				puyoImage = loadImage("puyo-g.png");
 				break;
+			case OJM:
+				puyoImage = loadImage("puyo-ojm.png");
+				break;
 			default:
 				break;
 			}

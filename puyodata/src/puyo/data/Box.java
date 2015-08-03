@@ -17,14 +17,17 @@ public class Box {
 	private int sequence;
 	private PuyoState currentPuyo;
 	private int score;
+	private int ojmCount;
 	private int fallCount;
 	private int effectCount;
 	private int chainCount;
 	private Cluster nextPuyo;
 	private List<Puyo> stack;
+	private List<Integer> ojms;
 
 	public Box() {
 		stack = new ArrayList<>();
+		ojms = new ArrayList<>();
 	}
 
 	public String getName() {
@@ -67,6 +70,14 @@ public class Box {
 		this.score = score;
 	}
 
+	public int getOjmCount() {
+		return ojmCount;
+	}
+
+	public void setOjmCount(int ojmCount) {
+		this.ojmCount = ojmCount;
+	}
+
 	public int getFallCount() {
 		return fallCount;
 	}
@@ -107,6 +118,14 @@ public class Box {
 		this.stack = stack;
 	}
 
+	public List<Integer> getOjms() {
+		return ojms;
+	}
+
+	public void setOjms(List<Integer> ojms) {
+		this.ojms = ojms;
+	}
+
 	public Puyo getPuyo(int row, int rank) {
 		int index = rank * ROW + row;
 		if (stack.size() <= index || index < 0) {
@@ -132,5 +151,16 @@ public class Box {
 				arr[i][j] = stack.get(index);
 			}
 		}
+	}
+
+	public List<int[]> getOJMPos() {
+		List<int[]> list = new ArrayList<>();
+		for (int index : ojms) {
+			int rank = index / ROW;
+			int row = index % ROW;
+			int[] a = new int[] { row, rank };
+			list.add(a);
+		}
+		return list;
 	}
 }

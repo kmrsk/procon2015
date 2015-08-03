@@ -6,6 +6,7 @@ public class Message {
 		START,
 		UPDATE,
 		ACTION, ACTION_OK, ACTION_NG,
+		GET,
 		END
 	}
 

@@ -1,7 +1,7 @@
 package puyo.data;
 
 public enum Puyo {
-	NONE, RED, BLUE, YELLOW, GREEN, PURPLE;
+	NONE, RED, BLUE, YELLOW, GREEN, PURPLE, OJM;
 
 	private static final Puyo[] ALL = { RED, BLUE, YELLOW, GREEN, PURPLE };
 

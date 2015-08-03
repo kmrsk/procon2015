@@ -30,6 +30,7 @@ public class PuyoPuyoMaster {
 
 	public static final int FALL_MAX = 30;
 	private static final int EFFECT_MAX = 10;
+	public static final int OJM_RATE = 70;
 
 	public static final int[] CHAIN_BONUS = { 0, 8, 16, 32, 64, 96, 128, 160, 192, 224, 256, 288, 320, 352, 384, 416,
 			448,
@@ -127,15 +128,15 @@ public class PuyoPuyoMaster {
 			receivedBox.clear();
 		}
 		if (state == State.GAMING) {
-			boolean needUpdate = updateBox(game.getBox1(), puyoArray1);
-			needUpdate |= updateBox(game.getBox2(), puyoArray2);
+			boolean needUpdate = updateBox(game.getBox1(), game.getBox2(), puyoArray1);
+			needUpdate |= updateBox(game.getBox2(), game.getBox1(), puyoArray2);
 			if (needUpdate) {
 				sendUpdate(game);
 			}
 		}
 	}
 
-	private boolean updateBox(Box box, PuyoEx[][] puyoArray) {
+	private boolean updateBox(Box box, Box targetBox, PuyoEx[][] puyoArray) {
 		if (state == State.END) {
 			return false;
 		}
@@ -182,6 +183,8 @@ public class PuyoPuyoMaster {
 						box.setState(BoxState.EFFECT);
 						box.setEffectCount(EFFECT_MAX);
 						box.setScore(box.getScore() + e);
+						// おじゃまぷよ追加
+						targetBox.setOjmCount(targetBox.getOjmCount() + e);
 					} else if (isEnd(box, puyoArray)) {
 						loser = box.getName();
 						box.setChainCount(0);
@@ -219,9 +222,9 @@ public class PuyoPuyoMaster {
 				&& puyoArray[Box.ROW / 2 - 1][Box.RANK - 1].type == PuyoType.STATIC)
 			return true;
 
-		if (puyoArray[Box.ROW / 2][Box.RANK - 1].puyo != Puyo.NONE
-				&& puyoArray[Box.ROW / 2][Box.RANK - 1].type == PuyoType.STATIC)
-			return true;
+		//if (puyoArray[Box.ROW / 2][Box.RANK - 1].puyo != Puyo.NONE
+		//		&& puyoArray[Box.ROW / 2][Box.RANK - 1].type == PuyoType.STATIC)
+		//	return true;
 		return false;
 	}
 
@@ -286,13 +289,22 @@ public class PuyoPuyoMaster {
 			puyoArray[pos2[0]][pos2[1]].puyo = box.getCurrentPuyo().getCluster().getSecond();
 			puyoArray[pos2[0]][pos2[1]].type = PuyoType.FALL;
 		}
+		for (int[] pos : box.getOJMPos()) {
+			puyoArray[pos[0]][pos[1]].puyo = Puyo.OJM;
+			puyoArray[pos[0]][pos[1]].type = PuyoType.FALL;
+		}
 	}
 
 	private void updatePuyoFromPuyoArray(Box box, PuyoEx[][] puyoArray) {
+		box.getOjms().clear();
 		for (int i = 0; i < Box.ROW; i++) {
 			for (int j = 0; j < Box.RANK; j++) {
 				if (puyoArray[i][j].type == PuyoType.STATIC) {
 					box.setPuyo(i, j, puyoArray[i][j].puyo);
+				} else if (puyoArray[i][j].puyo == Puyo.OJM) {
+					box.getOjms().add(j * Box.ROW + i);
+				} else {
+					box.setPuyo(i, j, Puyo.NONE);
 				}
 			}
 		}
@@ -314,6 +326,7 @@ public class PuyoPuyoMaster {
 	}
 
 	// すべてstaticならエフェクト終了
+	// おじゃまぷよが残っていれば続行
 	private boolean continueEffect(Box box, PuyoEx[][] puyoArray) {
 		for (int i = 0; i < Box.ROW; i++) {
 			for (int j = 0; j < Box.RANK; j++) {
@@ -323,7 +336,30 @@ public class PuyoPuyoMaster {
 				}
 			}
 		}
+		if (box.getOjmCount() >= OJM_RATE) {
+			createOJM(box, puyoArray);
+			return true;
+		}
 		return false;
+	}
+
+	private void createOJM(Box box, PuyoEx[][] puyoArray) {
+		int ojm = box.getOjmCount();
+		// 左端からおじゃまぷよを充填
+		out: for (int j = 1; j <= Box.RANK; j++) {
+			for (int i = 0; i < Box.ROW; i++) {
+				if (puyoArray[i][Box.RANK - j].puyo == Puyo.NONE
+						&& puyoArray[i][Box.RANK - j].type == PuyoType.STATIC) {
+					ojm -= OJM_RATE;
+					puyoArray[i][Box.RANK - j].puyo = Puyo.OJM;
+					puyoArray[i][Box.RANK - j].type = PuyoType.FALL;
+				}
+				if (ojm < OJM_RATE) {
+					break out;
+				}
+			}
+		}
+		box.setOjmCount(0);
 	}
 
 	//
@@ -355,7 +391,11 @@ public class PuyoPuyoMaster {
 		Puyo[] tmparr = new Puyo[Box.ROW * Box.RANK];
 		for (int i = 0; i < Box.ROW; i++) {
 			for (int j = 0; j < Box.RANK; j++) {
-				tmparr[i + j * Box.ROW] = puyoArray[i][j].puyo;
+				if (puyoArray[i][j].puyo == Puyo.OJM) {
+					tmparr[i + j * Box.ROW] = Puyo.NONE;
+				} else {
+					tmparr[i + j * Box.ROW] = puyoArray[i][j].puyo;
+				}
 			}
 		}
 		int index = 0;
@@ -376,6 +416,8 @@ public class PuyoPuyoMaster {
 						set.add(tmparr[i]);
 						tmparr[i] = Puyo.NONE;
 						puyoArray[i % Box.ROW][i / Box.ROW].puyo = Puyo.NONE;
+						// 消したぷよの周りにおじゃまぷよがいたら削除
+						eraseOJM(box, puyoArray, i % Box.ROW, i / Box.ROW);
 					}
 					connBonus += CONNECT_BONUS[founded.size()];
 				}
@@ -390,6 +432,27 @@ public class PuyoPuyoMaster {
 			score = count;
 		}
 		return score * 10;
+	}
+
+	private void eraseOJM(Box box, PuyoEx[][] puyoArray, int row, int rank) {
+		List<int[]> checks = new ArrayList<>();
+		if (0 < row) {
+			checks.add(new int[] { row - 1, rank });
+		}
+		if (0 < rank) {
+			checks.add(new int[] { row, rank - 1 });
+		}
+		if (row < Box.ROW - 1) {
+			checks.add(new int[] { row + 1, rank });
+		}
+		if (rank < Box.RANK - 1) {
+			checks.add(new int[] { row, rank + 1 });
+		}
+		for (int[] pos : checks) {
+			if (puyoArray[pos[0]][pos[1]].puyo == Puyo.OJM) {
+				puyoArray[pos[0]][pos[1]].puyo = Puyo.NONE;
+			}
+		}
 	}
 
 	private Set<Integer> search(int index, Puyo[] tmparr) {
@@ -489,6 +552,9 @@ public class PuyoPuyoMaster {
 		case LOGIN:
 			receiveLogin(ip, message);
 			break;
+		case GET:
+			receiveGet(ip, message);
+			break;
 		default:
 			break;
 		}
@@ -570,6 +636,13 @@ public class PuyoPuyoMaster {
 		}
 		Message response = new Message(MessageId.ACTION_NG);
 		send(ip, port, response);
+	}
+
+	public void receiveGet(String ip, Message message) {
+		User user = message.getUser();
+		Message response = new Message(MessageId.UPDATE);
+		response.setGame(game);
+		send(user.getIp(), user.getPort(), response);
 	}
 
 	/**
