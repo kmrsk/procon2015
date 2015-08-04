@@ -17,6 +17,7 @@ public class Box {
 	private int sequence;
 	private PuyoState currentPuyo;
 	private int score;
+	private FallSpeed fallSpeed;
 	private int ojmCount;
 	private int fallCount;
 	private int effectCount;
@@ -28,6 +29,7 @@ public class Box {
 	public Box() {
 		stack = new ArrayList<>();
 		ojms = new ArrayList<>();
+		fallSpeed = FallSpeed.NORMAL;
 	}
 
 	public String getName() {
@@ -68,6 +70,14 @@ public class Box {
 
 	public void setScore(int score) {
 		this.score = score;
+	}
+
+	public FallSpeed getFallSpeed() {
+		return fallSpeed;
+	}
+
+	public void setFallSpeed(FallSpeed fallSpeed) {
+		this.fallSpeed = fallSpeed;
 	}
 
 	public int getOjmCount() {

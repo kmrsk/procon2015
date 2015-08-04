@@ -18,6 +18,7 @@ import puyo.data.Action;
 import puyo.data.Box;
 import puyo.data.Box.BoxState;
 import puyo.data.Cluster;
+import puyo.data.FallSpeed;
 import puyo.data.Game;
 import puyo.data.Message;
 import puyo.data.Message.MessageId;
@@ -145,8 +146,12 @@ public class PuyoPuyoMaster {
 		case DOWN:
 			// 落下カウント減らす
 			if (box.getFallCount() > 0) {
-				box.setFallCount(box.getFallCount() - 1);
-				if (box.getFallCount() % 10 == 5) {
+				if (box.getFallSpeed() == FallSpeed.FAST && box.getFallCount() > 1) {
+					box.setFallCount(box.getFallCount() - 2);
+				} else {
+					box.setFallCount(box.getFallCount() - 1);
+				}
+				if (box.getFallCount() % 10 == 4) {
 					move(box);
 					convertPuyoArrayFromBox(box, puyoArray);
 				}
@@ -511,6 +516,8 @@ public class PuyoPuyoMaster {
 		// 次の次のぷよを取得
 		Cluster nnp = getCluster(box.getSequence() + 1);
 		box.setNextPuyo(nnp);
+		// 落下速度を初期化
+		box.setFallSpeed(FallSpeed.NORMAL);
 	}
 
 	private Cluster getCluster(int index) {
@@ -625,6 +632,8 @@ public class PuyoPuyoMaster {
 					User user = message.getUser();
 					Action action = message.getAction();
 					actionMap.put(user.getName(), action);
+					Box box = game.selectBox(user.getName());
+					box.setFallSpeed(action.getFallSpeed());
 					Message response = new Message(MessageId.ACTION_OK);
 					send(ip, port, response);
 					return;

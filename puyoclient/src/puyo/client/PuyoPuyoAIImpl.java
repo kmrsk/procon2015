@@ -3,6 +3,7 @@ package puyo.client;
 import puyo.data.Action;
 import puyo.data.Box;
 import puyo.data.Cluster;
+import puyo.data.FallSpeed;
 import puyo.data.Game;
 import puyo.data.Puyo;
 import puyo.data.PuyoState;
@@ -56,6 +57,7 @@ public class PuyoPuyoAIImpl implements PuyoPuyoAI {
 			action.setState(puyoState);
 		}
 		action.setSequence(box.getSequence());
+		action.setFallSpeed(FallSpeed.FAST);
 		return action;
 	}
 
