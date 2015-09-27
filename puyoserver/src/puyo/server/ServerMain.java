@@ -67,6 +67,11 @@ public enum ServerMain {
 	}
 
 	public static void main(String[] args) {
+		if (args.length > 0) {
+			int speed = Integer.parseInt(args[0]);
+			PuyoPuyoMaster.FALL_MAX = (int) Math.pow(2, speed + 4);
+			System.out.println("speed:" + PuyoPuyoMaster.FALL_MAX);
+		}
 		PuyoPuyoMaster master = new PuyoPuyoMaster();
 		INSTANCE.setPort(5432);
 		INSTANCE.setMaster(master);

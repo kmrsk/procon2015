@@ -29,7 +29,8 @@ import puyo.data.User;
 
 public class PuyoPuyoMaster {
 
-	public static final int FALL_MAX = 30;
+	public static final int OJM_MAX = 30;
+	public static/*final*/int FALL_MAX = 32;
 	private static final int EFFECT_MAX = 10;
 	public static final int OJM_RATE = 70;
 
@@ -146,12 +147,14 @@ public class PuyoPuyoMaster {
 		case DOWN:
 			// 落下カウント減らす
 			if (box.getFallCount() > 0) {
-				if (box.getFallSpeed() == FallSpeed.FAST && box.getFallCount() > 1) {
-					box.setFallCount(box.getFallCount() - 2);
+				int tmp = box.getFallCount();
+				if (box.getFallSpeed() == FallSpeed.FAST && box.getFallCount() > 3) {
+					box.setFallCount(box.getFallCount() - 4);
 				} else {
 					box.setFallCount(box.getFallCount() - 1);
 				}
-				if (box.getFallCount() % 10 == 4) {
+				// 5をまたいだら移動
+				if (box.getFallCount() <= 5 && tmp > 5) {
 					move(box);
 					convertPuyoArrayFromBox(box, puyoArray);
 				}
@@ -189,7 +192,16 @@ public class PuyoPuyoMaster {
 						box.setEffectCount(EFFECT_MAX);
 						box.setScore(box.getScore() + e);
 						// おじゃまぷよ追加
-						targetBox.setOjmCount(targetBox.getOjmCount() + e);
+						// 相殺判定
+						if (box.getOjmCount() >= e) {
+							box.setOjmCount(box.getOjmCount() - e);
+						} else if (box.getOjmCount() > 0) {
+							int e2 = e - box.getOjmCount();
+							box.setOjmCount(0);
+							targetBox.setOjmCount(targetBox.getOjmCount() + e2);
+						} else {
+							targetBox.setOjmCount(targetBox.getOjmCount() + e);
+						}
 					} else if (isEnd(box, puyoArray)) {
 						loser = box.getName();
 						box.setChainCount(0);
@@ -199,11 +211,20 @@ public class PuyoPuyoMaster {
 						sendEnd(game);
 						needUpdate = true;
 					} else {
-						box.setChainCount(0);
-						next(box);
-						box.setState(BoxState.DOWN);
-						box.setFallCount(FALL_MAX);
-						box.setEffectCount(0);
+						// 消去処理終了後
+						// おじゃまぷよの追加判定
+						if (box.getOjmCount() >= OJM_RATE && !box.isOjmFall()) {
+							createOJM(box, puyoArray);
+							box.setOjmFall(true);
+							box.setEffectCount(EFFECT_MAX);
+						} else {
+							box.setOjmFall(false);
+							box.setChainCount(0);
+							next(box);
+							box.setState(BoxState.DOWN);
+							box.setFallCount(FALL_MAX);
+							box.setEffectCount(0);
+						}
 					}
 					updatePuyoFromPuyoArray(box, puyoArray);
 				}
@@ -341,16 +362,14 @@ public class PuyoPuyoMaster {
 				}
 			}
 		}
-		if (box.getOjmCount() >= OJM_RATE) {
-			createOJM(box, puyoArray);
-			return true;
-		}
 		return false;
 	}
 
 	private void createOJM(Box box, PuyoEx[][] puyoArray) {
 		int ojm = box.getOjmCount();
 		// 左端からおじゃまぷよを充填
+		// 最大30個まで生成
+		int ojmCreated = 0;
 		out: for (int j = 1; j <= Box.RANK; j++) {
 			for (int i = 0; i < Box.ROW; i++) {
 				if (puyoArray[i][Box.RANK - j].puyo == Puyo.NONE
@@ -359,12 +378,16 @@ public class PuyoPuyoMaster {
 					puyoArray[i][Box.RANK - j].puyo = Puyo.OJM;
 					puyoArray[i][Box.RANK - j].type = PuyoType.FALL;
 				}
+				ojmCreated += 1;
+				if (ojmCreated >= OJM_MAX) {
+					break out;
+				}
 				if (ojm < OJM_RATE) {
 					break out;
 				}
 			}
 		}
-		box.setOjmCount(0);
+		box.setOjmCount(ojm);
 	}
 
 	//

@@ -100,6 +100,10 @@ public class PuyoPuyoClient {
 		Box box = game.selectBox(user.getName());
 		if (box.getState() == BoxState.DOWN) {
 			new Thread(() -> {
+				try {
+					Thread.sleep(1000);
+				} catch (Exception e) {
+				}
 				Action action = ai.createAction(game, user);
 				sendAction(action);
 			}).start();

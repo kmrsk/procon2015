@@ -22,6 +22,7 @@ public class Box {
 	private int fallCount;
 	private int effectCount;
 	private int chainCount;
+	private boolean ojmFall;
 	private Cluster nextPuyo;
 	private List<Puyo> stack;
 	private List<Integer> ojms;
@@ -102,6 +103,14 @@ public class Box {
 
 	public void setChainCount(int chainCount) {
 		this.chainCount = chainCount;
+	}
+
+	public boolean isOjmFall() {
+		return ojmFall;
+	}
+
+	public void setOjmFall(boolean ojmFall) {
+		this.ojmFall = ojmFall;
 	}
 
 	public int getEffectCount() {
