@@ -165,6 +165,8 @@ public class PuyoPuyoMaster {
 				needUpdate = true;
 			}
 			if (isLanding(box)) {
+				// 解析用log
+				ServerMain.INSTANCE.logging(box);
 				box.setState(BoxState.EFFECT);
 				box.setEffectCount(EFFECT_MAX);
 				box.setFallCount(0);
@@ -362,6 +364,8 @@ public class PuyoPuyoMaster {
 				}
 			}
 		}
+		// 解析用log
+		ServerMain.INSTANCE.logging(box);
 		return false;
 	}
 
