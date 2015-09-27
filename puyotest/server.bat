@@ -1,1 +1,1 @@
-java -jar puyo-server.jar > message.log
+java -jar puyo-server.jar 1 > message.log
