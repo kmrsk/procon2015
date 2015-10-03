@@ -33,6 +33,9 @@ public class Puyofu {
 	// name
 	static String[] name = new String[2];
 	
+	static // ひとつ前の状態
+	Box[] boxPrev = new Box[2];
+	
 	public static void main(String[] args) throws IOException {
 		// 引数からぷよ譜のファイルパスを取得
 		if (args.length < 1) {
@@ -117,14 +120,28 @@ public class Puyofu {
 			}
 		}
 
-		// chainCountが0のEFFECTは読み飛ばし
-		if (box.getState() == BoxState.EFFECT && box.getEffectCount() == 0) {
-			next(puyofuList, canvas, master, dir);
-			return;
+		// 前と同じ場合は読み飛ばし
+		if (boxPrev[index] != null) {
+			Puyo[][] arrPrev = new Puyo[Box.ROW][Box.RANK];
+			boxPrev[index].createPuyoArray(arrPrev);
+			boolean bMatch = true;
+			for (int i = 0; i < Box.ROW; i++) {
+				for (int j = 0; j < Box.RANK; j++) {
+					if (arr[i][j] != arrPrev[i][j]) {
+						bMatch = false;
+						break;
+					}
+				}
+			}
+			if (bMatch) {
+				next(puyofuList, canvas, master, dir);
+				return;
+			}
 		}
+		boxPrev[index] = box;
 		
 		// 現在のぷよを表示
-		if (box.getEffectCount() == 0) {
+		if (box.getChainCount() == 0) {
 			PuyoState currentPuyo = box.getCurrentPuyo();
 			int currentRow = currentPuyo.getRow();
 			int currentRank = currentPuyo.getRank(); 
