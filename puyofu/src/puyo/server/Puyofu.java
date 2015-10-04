@@ -44,6 +44,11 @@ public class Puyofu {
 		}
 		String filepath = args[0];
 		
+		// 第2引数(オプション)がある場合、box1のクライアント名とする
+		if (args.length >= 2) {
+			name[0] = args[1];
+		}
+		
 		// ぷよ譜読み込み
 		BufferedReader br = new BufferedReader(new FileReader(filepath));
 		String strLine;
@@ -102,7 +107,7 @@ public class Puyofu {
 		pos += dir;
 
 		// 位置ラベル更新
-		posLabel.setText(String.format("%4d/%4d", pos, puyofuList.size()));
+		posLabel.setText(String.format("%4d/%4d", pos + 1, puyofuList.size()));
 
 		// ぷよ譜読み込み
 		String json = puyofuList.get(pos);
