@@ -22,9 +22,6 @@ public class PuyoPuyoAIImpl implements PuyoPuyoAI {
 
 	static private Rotate[] ALL_ROTATE = {Rotate.R0, Rotate.R90, Rotate.R180, Rotate.R270};
 
-	int DEPTH = 3; // 深読みするぷよ列の長さ
-	int MONTECARLO_NUM = 10; // ランダムに生成するぷよ列の数
-	
 	// 積まれたぷよの高さに対するペナルティ(rowの位置ごと)
 	static private int heightPenalty[] = {0, 1, 2, 2, 1, 0};
 
@@ -68,19 +65,8 @@ public class PuyoPuyoAIImpl implements PuyoPuyoAI {
 			// ぷよを置く
 			int point = putPuyo(nextArr, p);
 
-			// 置ける個所それぞれについて
-			int sumPoint = 0;
-			ArrayList<PuyoState> nextPuyoStateList = enumulatePutablePosition(nextArr, nextPuyo);
-			for (PuyoState nextPuyoState : nextPuyoStateList) {
-				// ランダムに生成
-				for (int i = 0; i < MONTECARLO_NUM; i++) {
-					// 評価関数
-					sumPoint += eval(nextArr, nextPuyoState, new Cluster(Puyo.getRandom(), Puyo.getRandom()), 2);
-				}
-			}
-			if (nextPuyoStateList.size() > 0) {
-				point += sumPoint / nextPuyoStateList.size();
-			}
+			// 次を探索
+			point += detectNext(nextArr, nextPuyo);
 			
 			//System.out.printf("%d,%d,%s:%d\n", p.getRow(), p.getRank(), p.getRotate(), point);
 
@@ -94,35 +80,42 @@ public class PuyoPuyoAIImpl implements PuyoPuyoAI {
 		//System.out.printf("%d,%d,%s:%d\n", maxPuyoState.getRow(), maxPuyoState.getRank(), maxPuyoState.getRotate(), maxPoint);
 		return maxPuyoState;
 	}
-	
-	
-	private int eval(Puyo[][] arr, PuyoState p, Cluster nextPuyo, int depth) {
-		Puyo[][] nextArr = copyPuyoArr(arr);
-		
-		// ぷよを置く
-		int point = putPuyo(nextArr, p);
-		
-		// 深読み
-		if (depth < DEPTH) {
-			// 置ける個所それぞれについて
-			int sumPoint = 0;
-			ArrayList<PuyoState> puyoStateList = enumulatePutablePosition(nextArr, nextPuyo);
-			for (PuyoState nextPuyoState : puyoStateList) {
-				// 再帰
-				sumPoint += eval(nextArr, nextPuyoState, new Cluster(Puyo.getRandom(), Puyo.getRandom()), depth + 1);
-			}
-			if (puyoStateList.size() > 0) {
-				point += sumPoint / puyoStateList.size();
-			}
-		} else {
-			// 末端の場を評価
 
-			// 積まれたぷよの高さの評価
-			point += evalHeight(nextArr) * 10;
+	// 次を探索
+	private int detectNext(Puyo[][] arr, Cluster p) {
+		int maxPoint = Integer.MIN_VALUE;
+
+		// 置ける個所それぞれについて
+		ArrayList<PuyoState> nextPuyoStateList = enumulatePutablePosition(arr, p);
+		for (PuyoState nextPuyoState : nextPuyoStateList) {
+			Puyo[][] nextArr = copyPuyoArr(arr);
 			
-			// 連結の評価
-			point += evalRenketsu(nextArr) * 200;
+			// ぷよを置く
+			int point = putPuyo(nextArr, nextPuyoState);
+
+			// 評価関数
+			point += eval(nextArr);
+			
+			if (point > maxPoint) {
+				maxPoint = point;
+			}
 		}
+
+		// 最大値を返す
+		return maxPoint;
+	}
+	
+	
+	private int eval(Puyo[][] arr) {
+		int point = 0;
+
+		// 末端の場を評価
+
+		// 積まれたぷよの高さの評価
+		point += evalHeight(arr) * 10;
+		
+		// 連結の評価
+		point += evalRenketsu(arr) * 100;
 
 		return point;
 	}
@@ -154,7 +147,7 @@ public class PuyoPuyoAIImpl implements PuyoPuyoAI {
 		boolean checked[][] = new boolean[Box.ROW][Box.RANK];
 		for (int row = 0; row < Box.ROW; row++) {
 			for (int rank = 0; rank < Box.RANK; rank++) {
-				renketsu += checkErase(nextArr, checked, nextArr[row][rank], row, rank, 0) - 1;
+				renketsu += checkErase(nextArr, checked, nextArr[row][rank], row, rank) - 1;
 			}
 		}
 		return renketsu;
@@ -331,7 +324,7 @@ public class PuyoPuyoAIImpl implements PuyoPuyoAI {
 		Puyo color = arr[row][rank];
 		
 		// 消去チェック
-		int cnt = checkErase(arr, checked, color, row, rank, 0);
+		int cnt = checkErase(arr, checked, color, row, rank);
 		
 		if (cnt >= 4) {
 			// 消去
@@ -343,7 +336,9 @@ public class PuyoPuyoAIImpl implements PuyoPuyoAI {
 	
 	// 消去チェック(再帰用)
 	//	return : つながったぷよの数
-	private int checkErase(Puyo[][] arr, boolean[][] checked, Puyo color, int row, int rank, int cnt) {
+	private int checkErase(Puyo[][] arr, boolean[][] checked, Puyo color, int row, int rank) {
+		int cnt = 0;
+
 		if (arr[row][rank] == Puyo.OJM) {
 			// おじゃまぷよの消去
 			checked[row][rank] = true;
@@ -357,19 +352,19 @@ public class PuyoPuyoAIImpl implements PuyoPuyoAI {
 		
 		// 上
 		if (rank + 1 < Box.RANK && checked[row][rank + 1] == false) {
-			cnt = checkErase(arr, checked, color, row, rank + 1, cnt);
+			cnt += checkErase(arr, checked, color, row, rank + 1);
 		}
 		// 下
-		if (rank - 1 > 0 && checked[row][rank - 1] == false) {
-			cnt = checkErase(arr, checked, color, row, rank - 1, cnt);
+		if (rank - 1 >= 0 && checked[row][rank - 1] == false) {
+			cnt += checkErase(arr, checked, color, row, rank - 1);
 		}
 		// 右
 		if (row + 1 < Box.ROW && checked[row + 1][rank] == false) {
-			cnt = checkErase(arr, checked, color, row + 1, rank, cnt);
+			cnt += checkErase(arr, checked, color, row + 1, rank);
 		}
 		// 左
-		if (row - 1 > 0 && checked[row - 1][rank] == false) {
-			cnt = checkErase(arr, checked, color, row - 1, rank, cnt);
+		if (row - 1 >= 0 && checked[row - 1][rank] == false) {
+			cnt += checkErase(arr, checked, color, row - 1, rank);
 		}
 		
 		return cnt;
