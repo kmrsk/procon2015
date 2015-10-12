@@ -23,7 +23,11 @@ public class PuyoPuyoAIImplTest {
 		Cluster currentPuyo = new Cluster(Puyo.GREEN, Puyo.BLUE);
 		Cluster nextPuyo = new Cluster(Puyo.PURPLE, Puyo.BLUE);
 
+		long start = System.currentTimeMillis();
 		PuyoState puyoState = invoke(ai, "detectPutState", arr, currentPuyo, nextPuyo);
+		long end = System.currentTimeMillis();
+		
+		System.out.println((end - start)  + "ms");
 
 		assertEquals(4, puyoState.getRow());
 	}

@@ -1,6 +1,8 @@
 package puyo.client3;
 
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 
 import com.google.gson.Gson;
 
@@ -13,6 +15,7 @@ import puyo.data.Puyo;
 import puyo.data.PuyoState;
 import puyo.data.PuyoState.Rotate;
 import puyo.data.User;
+import puyo.server.PuyoPuyoMaster;
 
 public class PuyoPuyoAIImpl implements PuyoPuyoAI {
 	static private Gson gson = new Gson();
@@ -52,6 +55,7 @@ public class PuyoPuyoAIImpl implements PuyoPuyoAI {
 		return action;
 	}
 
+	// 探索
 	private PuyoState detectPutState(Puyo[][] arr, Cluster currentPuyo, Cluster nextPuyo) {
 		PuyoState maxPuyoState = null;
 		int maxPoint = Integer.MIN_VALUE;
@@ -114,10 +118,10 @@ public class PuyoPuyoAIImpl implements PuyoPuyoAI {
 			// 末端の場を評価
 
 			// 積まれたぷよの高さの評価
-			point += evalHeight(nextArr);
+			point += evalHeight(nextArr) * 10;
 			
 			// 連結の評価
-			point += evalRenketsu(nextArr) * 10;
+			point += evalRenketsu(nextArr) * 200;
 		}
 
 		return point;
@@ -150,7 +154,7 @@ public class PuyoPuyoAIImpl implements PuyoPuyoAI {
 		boolean checked[][] = new boolean[Box.ROW][Box.RANK];
 		for (int row = 0; row < Box.ROW; row++) {
 			for (int rank = 0; rank < Box.RANK; rank++) {
-				renketsu += checkErase(nextArr, checked, nextArr[row][rank], row, rank, 0);
+				renketsu += checkErase(nextArr, checked, nextArr[row][rank], row, rank, 0) - 1;
 			}
 		}
 		return renketsu;
@@ -194,12 +198,12 @@ public class PuyoPuyoAIImpl implements PuyoPuyoAI {
 			for (int i = 0; i < rotate_upper_bound; i++) {
 				Rotate rotate = ALL_ROTATE[i];
 				
-				if (rotate == Rotate.R180) {
-					if (row == 0 || arr[row - 1][Box.RANK - 3] != Puyo.NONE) {
+				if (rotate == Rotate.R0) {
+					if (row == 5 || arr[row + 1][Box.RANK - 3] != Puyo.NONE) {
 						continue;
 					}
-				} else if (rotate == Rotate.R0) {
-					if (row == 5 || arr[row + 1][Box.RANK - 3] != Puyo.NONE) {
+				} else if (rotate == Rotate.R180) {
+					if (row == 0 || arr[row - 1][Box.RANK - 3] != Puyo.NONE) {
 						continue;
 					}
 				}
@@ -285,6 +289,9 @@ public class PuyoPuyoAIImpl implements PuyoPuyoAI {
 		// 新しい落下位置リスト
 		ArrayList<Integer> newFallPosList = new ArrayList<Integer>();
 
+		int sumCnt = 0; // 消したぷよの総数
+		int connBonus = 0; // 連結ボーナス
+		Set<Puyo> set = new HashSet<Puyo>();
 		for (Integer fallPos : fallPosList) {
 			int row = intToRow(fallPos);
 			int rank = intToRank(fallPos);
@@ -296,17 +303,18 @@ public class PuyoPuyoAIImpl implements PuyoPuyoAI {
 				if (arr[row][rank] != Puyo.NONE && arr[row][rank] != privColor) {
 					// 消去
 					int cnt = erase(arr, row, rank, newFallPosList);
-					
-					// 連結数ボーナス
-					int bonusRenketsu = 0;
-					if (cnt >= 5) {
-						bonusRenketsu = cnt - 3;
+					if (cnt >= 4) {
+						sumCnt += cnt;
+						connBonus += PuyoPuyoMaster.CONNECT_BONUS[cnt];
+						set.add(arr[row][rank]);
 					}
-					point += cnt * 10 * (rensa * 8 + bonusRenketsu);
 				}
 				privColor = arr[row][rank];
 			}
 		}
+		
+		// 点数計算
+		point += sumCnt * 10 * (PuyoPuyoMaster.CHAIN_BONUS[rensa] + connBonus + PuyoPuyoMaster.COLOR_BONUS[set.size()]);
 		
 		// 連鎖
 		if (newFallPosList.size() > 0) {
