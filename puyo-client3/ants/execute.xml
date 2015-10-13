@@ -10,7 +10,7 @@
 		</javac>
 	</target>
 	<target name="jar">
-		<jar basedir="${project.dir}/bin" jarfile="${project.dir}/jar/puyoclient3.jar">
+		<jar basedir="${project.dir}/bin" jarfile="${project.dir}/jar/puyo-client3.jar">
 			<manifest>
 				<attribute name="Main-Class" value="puyo.client.ClientMain"/>
 				<attribute name="Class-Path" value="lib/gson-2.3.1.jar lib/puyo-data.jar"/>
