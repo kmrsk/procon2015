@@ -12,7 +12,7 @@
 	<target name="jar">
 		<jar basedir="${project.dir}/bin" jarfile="${project.dir}/jar/puyofu.jar">
 			<manifest>
-				<attribute name="Main-Class" value="puyo.client.ClientMain"/>
+				<attribute name="Main-Class" value="puyo.server.Puyofu"/>
 				<attribute name="Class-Path" value="lib/gson-2.3.1.jar lib/puyo-data.jar puyo-server.jar"/>
 			</manifest>
 		</jar>
