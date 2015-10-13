@@ -15,12 +15,15 @@ import puyo.data.Puyo;
 import puyo.data.PuyoState;
 import puyo.data.PuyoState.Rotate;
 import puyo.data.User;
-import puyo.server.PuyoPuyoMaster;
 
 public class PuyoPuyoAIImpl implements PuyoPuyoAI {
 	static private Gson gson = new Gson();
 
 	static private Rotate[] ALL_ROTATE = {Rotate.R0, Rotate.R90, Rotate.R180, Rotate.R270};
+
+	public static final int[] CHAIN_BONUS = { 0, 8, 16, 32, 64, 96, 128, 160, 192, 224, 256, 288, 320, 352, 384, 416, 448, 480, 512 };
+	public static final int[] CONNECT_BONUS = { 0, 0, 0, 0, 0, 2, 3, 4, 5, 6, 7, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10 };
+	public static final int[] COLOR_BONUS = { 0, 0, 3, 6, 12, 24 };
 
 	// 積まれたぷよの高さに対するペナルティ(位置ごと)
 	static private int heightPenalty[][] = {
@@ -335,7 +338,7 @@ public class PuyoPuyoAIImpl implements PuyoPuyoAI {
 					int cnt = erase(arr, row, rank, newFallPosList);
 					if (cnt >= 4) {
 						sumCnt += cnt;
-						connBonus += PuyoPuyoMaster.CONNECT_BONUS[cnt];
+						connBonus += CONNECT_BONUS[cnt];
 						set.add(arr[row][rank]);
 					}
 				}
@@ -344,7 +347,7 @@ public class PuyoPuyoAIImpl implements PuyoPuyoAI {
 		}
 		
 		// 点数計算
-		point += sumCnt * 10 * (PuyoPuyoMaster.CHAIN_BONUS[rensa] + connBonus + PuyoPuyoMaster.COLOR_BONUS[set.size()]);
+		point += sumCnt * 10 * (CHAIN_BONUS[rensa] + connBonus + COLOR_BONUS[set.size()]);
 		
 		// 連鎖
 		if (newFallPosList.size() > 0) {
