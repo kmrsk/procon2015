@@ -65,4 +65,21 @@ public class PuyoPuyoAIImplTest {
 
 		assertEquals(4, puyoState.getRow());
 	}
+
+	@Test
+	public void test4() {
+		PuyoPuyoAIImpl ai = new PuyoPuyoAIImpl();
+		
+		Puyo[][] arr = gson.fromJson("[[\"GREEN\",\"RED\",\"RED\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\"],[\"PURPLE\",\"PURPLE\",\"RED\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\"],[\"RED\",\"RED\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\"],[\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\"],[\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\"],[\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\"]]", Puyo[][].class);
+		Cluster currentPuyo = new Cluster(Puyo.BLUE, Puyo.RED);
+		Cluster nextPuyo = new Cluster(Puyo.GREEN, Puyo.PURPLE);
+
+		long start = System.currentTimeMillis();
+		PuyoState puyoState = invoke(ai, "detectPutState", arr, currentPuyo, nextPuyo);
+		long end = System.currentTimeMillis();
+		
+		System.out.println((end - start)  + "ms");
+
+		assertEquals(4, puyoState.getRow());
+	}
 }

@@ -22,8 +22,21 @@ public class PuyoPuyoAIImpl implements PuyoPuyoAI {
 
 	static private Rotate[] ALL_ROTATE = {Rotate.R0, Rotate.R90, Rotate.R180, Rotate.R270};
 
-	// 積まれたぷよの高さに対するペナルティ(rowの位置ごと)
-	static private int heightPenalty[] = {0, 1, 2, 2, 1, 0};
+	// 積まれたぷよの高さに対するペナルティ(位置ごと)
+	static private int heightPenalty[][] = {
+			{0, 0, 0, 0, 0, 0},
+			{0, 1, 5, 5, 1, 0},
+			{0, 2, 10, 10, 2, 0},
+			{0, 3, 15, 15, 3, 0},
+			{0, 4, 20, 20, 4, 0},
+			{0, 5, 25, 25, 5, 0},
+			{0, 6, 30, 30, 6, 0},
+			{0, 7, 100, 100, 7, 0},
+			{0, 8, 200, 200, 8, 0},
+			{0, 9, 500, 500, 9, 0},
+			{0, 10, 1000, 1000, 10, 0},
+			{0, 20, 10000, 10000, 20, 0},
+			};
 
 	public PuyoPuyoAIImpl() {
 	}
@@ -112,7 +125,7 @@ public class PuyoPuyoAIImpl implements PuyoPuyoAI {
 		// 末端の場を評価
 
 		// 積まれたぷよの高さの評価
-		point += evalHeight(arr) * 10;
+		point += evalHeight(arr) * 100;
 		
 		// 連結の評価
 		point += evalRenketsu(arr) * 100;
@@ -129,7 +142,7 @@ public class PuyoPuyoAIImpl implements PuyoPuyoAI {
 			for (int row = 0; row < Box.ROW; row++) {
 				if (nextArr[row][rank] != Puyo.NONE) {
 					allNone = false;
-					penalty += heightPenalty[row];
+					penalty += heightPenalty[rank][row];
 				}
 			}
 			
@@ -142,15 +155,39 @@ public class PuyoPuyoAIImpl implements PuyoPuyoAI {
 	}
 
 	// 連結の評価
-	private int evalRenketsu(Puyo[][] nextArr) {
-		int renketsu = 0;
+	private int evalRenketsu(Puyo[][] arr) {
+		int point = 0;
 		boolean checked[][] = new boolean[Box.ROW][Box.RANK];
 		for (int row = 0; row < Box.ROW; row++) {
 			for (int rank = 0; rank < Box.RANK; rank++) {
-				renketsu += checkErase(nextArr, checked, nextArr[row][rank], row, rank) - 1;
+				Puyo color = arr[row][rank];
+				if (color != Puyo.NONE && color != Puyo.OJM && checked[row][rank] == false) {
+					int samecolor = 0;
+
+					// 下方向に同色の連結があるか
+					for (int rank2 = rank; rank2 >= 0; rank2--) {
+						if (checked[row][rank2] && arr[row][rank2] == color) {
+							samecolor++;
+							break;
+						}
+					}
+					
+					// 左下方向に同色の連結があるか
+					if (row > 0) {
+						for (int rank2 = rank; rank2 >= 0; rank2--) {
+							if (checked[row - 1][rank2] && arr[row - 1][rank2] == color) {
+								samecolor++;
+								break;
+							}
+						}
+					}
+
+					int renketsu = checkErase(arr, checked, color, row, rank) - 1;
+					point += renketsu * 2 + samecolor;
+				}
 			}
 		}
-		return renketsu;
+		return point;
 	}
 
 	private Puyo[][] copyPuyoArr(Puyo[][] arr) {
@@ -201,7 +238,7 @@ public class PuyoPuyoAIImpl implements PuyoPuyoAI {
 					}
 				}
 				
-				PuyoState puyoState = new PuyoState(currentPuyo, rotate, row, Box.RANK - 3);
+				PuyoState puyoState = new PuyoState(currentPuyo, rotate, row, Box.RANK - 2);
 				
 				// 置ける場所リストに追加
 				puyoStateList.add(puyoState);
