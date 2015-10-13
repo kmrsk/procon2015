@@ -77,6 +77,7 @@ public class PuyoPuyoClient {
 			break;
 		case END:
 			state = State.GAMEEND;
+			System.exit(0);
 			break;
 		default:
 			break;
