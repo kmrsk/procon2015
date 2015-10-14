@@ -28,17 +28,17 @@ public class PuyoPuyoAIImpl implements PuyoPuyoAI {
 	// 積まれたぷよの高さに対するペナルティ(位置ごと)
 	static private int heightPenalty[][] = {
 			{0, 0, 0, 0, 0, 0},
-			{0, 1, 5, 5, 1, 0},
-			{0, 2, 10, 10, 2, 0},
-			{0, 3, 15, 15, 3, 0},
+			{0, 0, 1, 1, 0, 0},
+			{0, 0, 5, 5, 0, 0},
+			{0, 0, 15, 15, 0, 0},
 			{0, 4, 20, 20, 4, 0},
 			{0, 5, 25, 25, 5, 0},
-			{0, 6, 30, 30, 6, 0},
-			{0, 7, 500, 500, 7, 0},
-			{0, 8, 1000, 1000, 8, 0},
-			{0, 9, 5000, 5000, 9, 0},
-			{0, 10, 10000, 10000, 10, 0},
-			{0, 20, 10000, 10000, 20, 0},
+			{5, 6, 30, 30, 6, 5},
+			{6, 7, 50, 50, 7, 6},
+			{7, 8, 100, 100, 8, 7},
+			{8, 9, 500, 500, 9, 8},
+			{9, 10, 1000, 1000, 10, 9},
+			{10, 20, 1000, 1000, 20, 10},
 			};
 
 	public PuyoPuyoAIImpl() {
@@ -128,7 +128,7 @@ public class PuyoPuyoAIImpl implements PuyoPuyoAI {
 		// 末端の場を評価
 
 		// 積まれたぷよの高さの評価
-		point += evalHeight(arr) * 100;
+		point += evalHeight(arr) * 10;
 		
 		// 連結の評価
 		point += evalRenketsu(arr) * 100;
@@ -140,7 +140,7 @@ public class PuyoPuyoAIImpl implements PuyoPuyoAI {
 	private int evalHeight(Puyo[][] nextArr) {
 		int rank;
 		int penalty = 0;
-		for (rank = Box.RANK - 1; rank > 0; rank--) {
+		for (rank = 0; rank < Box.RANK; rank++) {
 			boolean allNone = true;
 			for (int row = 0; row < Box.ROW; row++) {
 				if (nextArr[row][rank] != Puyo.NONE) {
@@ -149,12 +149,12 @@ public class PuyoPuyoAIImpl implements PuyoPuyoAI {
 				}
 			}
 			
-			if (!allNone) {
+			if (allNone) {
 				break;
 			}
 		}
-		// 中央が高いほどマイナス
-		return -(rank - 1) * penalty;
+		// 高さペナルティが高いほどマイナス
+		return -penalty;
 	}
 
 	// 連結の評価
@@ -167,17 +167,17 @@ public class PuyoPuyoAIImpl implements PuyoPuyoAI {
 				if (color != Puyo.NONE && color != Puyo.OJM && checked[row][rank] == false) {
 					int samecolor = 0;
 
-					// 下方向に同色の連結があるか
-					for (int rank2 = rank; rank2 >= 0; rank2--) {
+					// 下方向4つ以内に同色の連結があるか
+					for (int rank2 = rank; rank2 >= 0 && rank2 >= rank - 4; rank2--) {
 						if (checked[row][rank2] && arr[row][rank2] == color) {
 							samecolor++;
 							break;
 						}
 					}
 					
-					// 左下方向に同色の連結があるか
+					// 左下方向4つ以内に同色の連結があるか
 					if (row > 0) {
-						for (int rank2 = rank; rank2 >= 0; rank2--) {
+						for (int rank2 = rank; rank2 >= 0 && rank2 >= rank - 4; rank2--) {
 							if (checked[row - 1][rank2] && arr[row - 1][rank2] == color) {
 								samecolor++;
 								break;
@@ -284,12 +284,14 @@ public class PuyoPuyoAIImpl implements PuyoPuyoAI {
 		}
 		
 		// 落下させる
-		return fallPuyo(arr, fallPosList, 0, 0);
+		return fallPuyo(arr, fallPosList, 0);
 	}
 	
 	// 落下させる
 	//	return : ポイント
-	private int fallPuyo(Puyo[][] arr, ArrayList<Integer> fallPosList, int rensa, int point) {
+	private int fallPuyo(Puyo[][] arr, ArrayList<Integer> fallPosList, int rensa) {
+		int point = 0;
+
 		for (int i = 0; i < fallPosList.size(); i++) {
 			int fallPos = fallPosList.get(i);
 
@@ -351,7 +353,7 @@ public class PuyoPuyoAIImpl implements PuyoPuyoAI {
 		
 		// 連鎖
 		if (newFallPosList.size() > 0) {
-			point += fallPuyo(arr, newFallPosList, rensa + 1, point);
+			point += fallPuyo(arr, newFallPosList, rensa + 1);
 		}
 		
 		return point;
