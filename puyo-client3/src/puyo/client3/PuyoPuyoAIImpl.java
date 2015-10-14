@@ -37,8 +37,8 @@ public class PuyoPuyoAIImpl implements PuyoPuyoAI {
 			{6, 7, 50, 50, 7, 6},
 			{7, 8, 100, 100, 8, 7},
 			{8, 9, 500, 500, 9, 8},
-			{9, 10, 1000, 1000, 10, 9},
-			{10, 20, 1000, 1000, 20, 10},
+			{100, 150, 1000, 1000, 150, 100},
+			{150, 200, 1000, 1000, 200, 150},
 			};
 
 	public PuyoPuyoAIImpl() {
@@ -164,20 +164,31 @@ public class PuyoPuyoAIImpl implements PuyoPuyoAI {
 		for (int row = 0; row < Box.ROW; row++) {
 			for (int rank = 0; rank < Box.RANK; rank++) {
 				Puyo color = arr[row][rank];
-				if (color != Puyo.NONE && color != Puyo.OJM && checked[row][rank] == false) {
+				if (color == Puyo.NONE) {
+					continue;
+				}
+				if (color != Puyo.OJM && checked[row][rank] == false) {
 					int samecolor = 0;
 
-					// 下方向4つ以内に同色の連結があるか
-					for (int rank2 = rank; rank2 >= 0 && rank2 >= rank - 4; rank2--) {
+					// 下方向4つ以内に1種類の異色ぷよをはさんで同色の連結があるか
+					Puyo privColor = null;
+					for (int rank2 = rank - 1; rank2 >= 0 && rank2 >= rank - 4; rank2--) {
 						if (checked[row][rank2] && arr[row][rank2] == color) {
 							samecolor++;
+							break;
+						}
+
+						if (privColor == null) {
+							privColor = arr[row][rank2];
+						} else if (arr[row][rank2] != privColor) {
+							// 2つ以上の異なる色のぷよがはさまれている
 							break;
 						}
 					}
 					
 					// 左下方向4つ以内に同色の連結があるか
 					if (row > 0) {
-						for (int rank2 = rank; rank2 >= 0 && rank2 >= rank - 4; rank2--) {
+						for (int rank2 = rank - 1; rank2 >= 0 && rank2 >= rank - 4; rank2--) {
 							if (checked[row - 1][rank2] && arr[row - 1][rank2] == color) {
 								samecolor++;
 								break;
@@ -208,7 +219,7 @@ public class PuyoPuyoAIImpl implements PuyoPuyoAI {
 
 		int row;
 		for (row = 3; row >= 0; row--) {
-			if (arr[row][Box.RANK - 3] != Puyo.NONE) {
+			if (arr[row][Box.RANK - 2] != Puyo.NONE) {
 				break;
 			}
 		}
@@ -221,7 +232,7 @@ public class PuyoPuyoAIImpl implements PuyoPuyoAI {
 		row++;
 
 		// row
-		for (; row < 6 && arr[row][Box.RANK - 3] == Puyo.NONE; row++) {
+		for (; row < 6 && arr[row][Box.RANK - 2] == Puyo.NONE; row++) {
 			// 回転パターン
 			int rotate_upper_bound = ALL_ROTATE.length;
 			// 同色の場合2パターンに制限
@@ -232,16 +243,20 @@ public class PuyoPuyoAIImpl implements PuyoPuyoAI {
 				Rotate rotate = ALL_ROTATE[i];
 				
 				if (rotate == Rotate.R0) {
-					if (row == 5 || arr[row + 1][Box.RANK - 3] != Puyo.NONE) {
+					if (row == 5 || arr[row + 1][Box.RANK - 2] != Puyo.NONE) {
 						continue;
 					}
 				} else if (rotate == Rotate.R180) {
-					if (row == 0 || arr[row - 1][Box.RANK - 3] != Puyo.NONE) {
+					if (row == 0 || arr[row - 1][Box.RANK - 2] != Puyo.NONE) {
 						continue;
 					}
 				}
 				
-				PuyoState puyoState = new PuyoState(currentPuyo, rotate, row, Box.RANK - 2);
+				int rank = Box.RANK - 1;
+				if (rotate == Rotate.R270) {
+					rank--;
+				}
+				PuyoState puyoState = new PuyoState(currentPuyo, rotate, row, rank);
 				
 				// 置ける場所リストに追加
 				puyoStateList.add(puyoState);
