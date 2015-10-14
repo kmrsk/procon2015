@@ -24,7 +24,7 @@ public class PuyoPuyoClient {
 	private Game game;
 	private State state;
 	private User user;
-	private Box box;
+	//private Box box;
 	private PuyoPuyoAI ai;
 
 	public PuyoPuyoClient() {
@@ -88,11 +88,13 @@ public class PuyoPuyoClient {
 		if (state != State.GAMEEND) {
 			state = State.GAMING;
 			if (game != null) {
-				Box tmpbox = game.selectBox(user.getName());
+				/*Box tmpbox = game.selectBox(user.getName());
 				if (box == null || tmpbox.getSequence() != box.getSequence()) {
+					System.out.println("receiveUpdate");
 					box = tmpbox;
 					createAction(message);
-				}
+				}*/
+				createAction(message);
 			}
 		}
 	}
@@ -100,10 +102,14 @@ public class PuyoPuyoClient {
 	private void createAction(Message message) {
 		Box box = game.selectBox(user.getName());
 		if (box.getState() == BoxState.DOWN) {
-			new Thread(() -> {
+			/*new Thread(() -> {
 				Action action = ai.createAction(game, user);
 				sendAction(action);
-			}).start();
+			}).start();*/
+			Action action = ai.createAction(game, user);
+			if (action != null) {
+				sendAction(action);
+			}
 		}
 	}
 

@@ -64,6 +64,8 @@ public class PuyoPuyoAIImpl implements PuyoPuyoAI {
 				break;
 			}
 			puyoState.setRotate(rotate);
+		} else {
+			return null;
 		}
 
 		action.setState(puyoState);
