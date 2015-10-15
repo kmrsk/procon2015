@@ -41,6 +41,7 @@ public class PuyoPuyoClient {
 		}
 		switch (state) {
 		case GAMING:
+			createAction(null);
 			break;
 		case LOGIN:
 			break;
@@ -87,15 +88,13 @@ public class PuyoPuyoClient {
 	private void receiveUpdate(Message message) {
 		if (state != State.GAMEEND) {
 			state = State.GAMING;
-			if (game != null) {
-				/*Box tmpbox = game.selectBox(user.getName());
+			/*if (game != null) {
+				Box tmpbox = game.selectBox(user.getName());
 				if (box == null || tmpbox.getSequence() != box.getSequence()) {
-					System.out.println("receiveUpdate");
 					box = tmpbox;
 					createAction(message);
-				}*/
-				createAction(message);
-			}
+				}
+			}*/
 		}
 	}
 

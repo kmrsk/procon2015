@@ -16,7 +16,7 @@ public class PuyoPuyoAIImpl implements PuyoPuyoAI {
 
 	@Override
 	public Action createAction(Game game, User user) {
-		System.out.println("createAction AI");
+		//System.out.println("createAction AI");
 		Box box = game.selectBox(user.getName());
 		Action action = new Action();
 		
@@ -25,9 +25,23 @@ public class PuyoPuyoAIImpl implements PuyoPuyoAI {
 		
 		int row = puyoState.getRow();
 		if (MainFrame.keyState[MainFrame.LEFT] && row > 0) {
-			puyoState.setRow(row - 1);
-		} else if (MainFrame.keyState[MainFrame.RIGHT] && row < Box.ROW - 1) {
-			puyoState.setRow(row + 1);
+			int rowLower = 1;
+			if (puyoState.getRotate() == Rotate.R180) {
+				rowLower++;
+			}
+			if (row >= rowLower) {
+				puyoState.setRow(row - 1);
+			}
+			MainFrame.keyState[MainFrame.LEFT] = false;
+		} else if (MainFrame.keyState[MainFrame.RIGHT]) {
+			int rowUpper = Box.ROW - 2;
+			if (puyoState.getRotate() == Rotate.R0) {
+				rowUpper--;
+			}
+			if (row <= rowUpper) {
+				puyoState.setRow(row + 1);
+			}
+			MainFrame.keyState[MainFrame.RIGHT] = false;
 		} else if (MainFrame.keyState[MainFrame.DOWN]) {
 			action.setFallSpeed(FallSpeed.FAST);
 		} else if (MainFrame.keyState[MainFrame.ROTATE]) {
@@ -46,7 +60,14 @@ public class PuyoPuyoAIImpl implements PuyoPuyoAI {
 				rotate = Rotate.R0;
 				break;
 			}
-			puyoState.setRotate(rotate);
+			if (rotate == Rotate.R0 && row == Box.ROW - 1) {
+				// 何もしない
+			} else if (rotate == Rotate.R180 && row == 0) {
+				// 何もしない
+			} else {
+				puyoState.setRotate(rotate);
+			}
+			MainFrame.keyState[MainFrame.ROTATE] = false;
 		} else if (MainFrame.keyState[MainFrame.RROTATE]) {
 			Rotate rotate = puyoState.getRotate();
 			switch (rotate) {
@@ -63,7 +84,14 @@ public class PuyoPuyoAIImpl implements PuyoPuyoAI {
 				rotate = Rotate.R180;
 				break;
 			}
-			puyoState.setRotate(rotate);
+			if (rotate == Rotate.R0 && row == Box.ROW - 1) {
+				// 何もしない
+			} else if (rotate == Rotate.R180 && row == 0) {
+				// 何もしない
+			} else {
+				puyoState.setRotate(rotate);
+			}
+			MainFrame.keyState[MainFrame.RROTATE] = false;
 		} else {
 			return null;
 		}
