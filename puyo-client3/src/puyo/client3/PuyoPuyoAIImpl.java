@@ -170,10 +170,10 @@ public class PuyoPuyoAIImpl implements PuyoPuyoAI {
 				if (color != Puyo.OJM && checked[row][rank] == false) {
 					int samecolor = 0;
 
-					// 下方向4つ以内に1種類の異色ぷよをはさんで同色の連結があるか
+					// 下方向4つ以内に1種類の異色ぷよをはさんで同色があるか
 					Puyo privColor = null;
 					for (int rank2 = rank - 1; rank2 >= 0 && rank2 >= rank - 4; rank2--) {
-						if (checked[row][rank2] && arr[row][rank2] == color) {
+						if (arr[row][rank2] == color) {
 							samecolor++;
 							break;
 						}
@@ -186,11 +186,37 @@ public class PuyoPuyoAIImpl implements PuyoPuyoAI {
 						}
 					}
 					
-					// 左下方向4つ以内に同色の連結があるか
 					if (row > 0) {
-						for (int rank2 = rank - 1; rank2 >= 0 && rank2 >= rank - 4; rank2--) {
-							if (checked[row - 1][rank2] && arr[row - 1][rank2] == color) {
-								samecolor++;
+						// 左下方向に同色があるか
+						for (int rank2 = rank - 1; rank2 >= 0; rank2--) {
+							if (arr[row - 1][rank2] == color && arr[row - 1][rank2 + 1] != color) {
+								// その右上方向の連結が消えた場合に連結するか
+								int rightRenketsu = 1;
+								for (int rank4 = rank2; rank4 < rank - 1; rank4++) {
+									if (arr[row][rank4] == arr[row][rank4 + 1]) {
+										rightRenketsu++;
+									}
+								}
+								if (rank2 <= rank - rightRenketsu) {
+									samecolor++;
+								}
+								break;
+							}
+						}
+
+						// 左上方向に同色があるか
+						for (int rank2 = rank + 1; rank2 < Box.RANK && arr[row - 1][rank2] != Puyo.NONE; rank2++) {
+							if (arr[row - 1][rank2] == color && arr[row - 1][rank2 - 1] != color) {
+								// その下方向の連結が消えた場合に連結するか
+								int leftRenketsu = 1;
+								for (int rank4 = rank; rank4 < rank2 - 1; rank4++) {
+									if (arr[row - 1][rank4] == arr[row - 1][rank4 + 1]) {
+										leftRenketsu++;
+									}
+								}
+								if (rank >= rank2 - leftRenketsu) {
+									samecolor++;
+								}
 								break;
 							}
 						}
