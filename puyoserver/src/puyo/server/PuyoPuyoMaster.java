@@ -154,7 +154,7 @@ public class PuyoPuyoMaster {
 					box.setFallCount(box.getFallCount() - 1);
 				}
 				// 5をまたいだら移動
-				if (box.getFallCount() <= 5 && tmp > 5) {
+				if (box.getFallCount() % 5 + (tmp - box.getFallCount()) >= 5) {
 					move(box);
 					convertPuyoArrayFromBox(box, puyoArray);
 				}
