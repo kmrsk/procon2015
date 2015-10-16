@@ -28,17 +28,17 @@ public class PuyoPuyoAIImpl implements PuyoPuyoAI {
 	// 積まれたぷよの高さに対するペナルティ(位置ごと)
 	static private int heightPenalty[][] = {
 			{0, 0, 0, 0, 0, 0},
-			{0, 0, 1, 1, 0, 0},
-			{0, 0, 5, 5, 0, 0},
-			{0, 0, 15, 15, 0, 0},
-			{0, 4, 20, 20, 4, 0},
-			{0, 5, 25, 25, 5, 0},
-			{5, 6, 30, 30, 6, 5},
-			{6, 7, 50, 50, 7, 6},
-			{7, 8, 100, 100, 8, 7},
-			{8, 9, 500, 500, 9, 8},
-			{100, 150, 1000, 1000, 150, 100},
-			{150, 200, 1000, 1000, 200, 150},
+			{0, 0, 10, 10, 0, 0},
+			{0, 0, 50, 50, 0, 0},
+			{0, 0, 150, 150, 0, 0},
+			{0, 40, 200, 200, 40, 0},
+			{0, 50, 250, 250, 50, 0},
+			{50, 60, 300, 300, 60, 50},
+			{60, 70, 500, 500, 70, 60},
+			{70, 80, 1000, 1000, 80, 70},
+			{80, 90, 5000, 5000, 90, 80},
+			{1000, 1500, 10000, 10000, 1500, 1000},
+			{1500, 2000, 10000, 10000, 2000, 1500},
 			};
 
 	public PuyoPuyoAIImpl() {
@@ -128,10 +128,10 @@ public class PuyoPuyoAIImpl implements PuyoPuyoAI {
 		// 末端の場を評価
 
 		// 積まれたぷよの高さの評価
-		point += evalHeight(arr) * 10;
+		point += evalHeight(arr);
 		
 		// 連結の評価
-		point += evalRenketsu(arr) * 100;
+		point += evalRenketsu(arr);
 
 		return point;
 	}
@@ -168,13 +168,14 @@ public class PuyoPuyoAIImpl implements PuyoPuyoAI {
 					continue;
 				}
 				if (color != Puyo.OJM && checked[row][rank] == false) {
-					int samecolor = 0;
+					int samecolorUnder = 0;
+					int samecolorLeft = 0;
 
 					// 下方向4つ以内に1種類の異色ぷよをはさんで同色があるか
 					Puyo privColor = null;
 					for (int rank2 = rank - 1; rank2 >= 0 && rank2 >= rank - 4; rank2--) {
 						if (arr[row][rank2] == color) {
-							samecolor++;
+							samecolorUnder++;
 							break;
 						}
 
@@ -198,24 +199,7 @@ public class PuyoPuyoAIImpl implements PuyoPuyoAI {
 									}
 								}
 								if (rank2 <= rank - rightRenketsu) {
-									samecolor++;
-								}
-								break;
-							}
-						}
-
-						// 左上方向に同色があるか
-						for (int rank2 = rank + 1; rank2 < Box.RANK && arr[row - 1][rank2] != Puyo.NONE; rank2++) {
-							if (arr[row - 1][rank2] == color && arr[row - 1][rank2 - 1] != color) {
-								// その下方向の連結が消えた場合に連結するか
-								int leftRenketsu = 1;
-								for (int rank4 = rank; rank4 < rank2 - 1; rank4++) {
-									if (arr[row - 1][rank4] == arr[row - 1][rank4 + 1]) {
-										leftRenketsu++;
-									}
-								}
-								if (rank >= rank2 - leftRenketsu) {
-									samecolor++;
+									samecolorLeft++;
 								}
 								break;
 							}
@@ -223,7 +207,7 @@ public class PuyoPuyoAIImpl implements PuyoPuyoAI {
 					}
 
 					int renketsu = checkErase(arr, checked, color, row, rank) - 1;
-					point += renketsu * 2 + samecolor;
+					point += renketsu * 200 + samecolorUnder * 100 + samecolorLeft * 100;
 				}
 			}
 		}
