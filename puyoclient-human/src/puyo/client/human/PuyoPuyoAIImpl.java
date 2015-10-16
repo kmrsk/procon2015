@@ -61,12 +61,11 @@ public class PuyoPuyoAIImpl implements PuyoPuyoAI {
 				break;
 			}
 			if (rotate == Rotate.R0 && row == Box.ROW - 1) {
-				// 何もしない
+				puyoState.setRow(Box.ROW - 2);
 			} else if (rotate == Rotate.R180 && row == 0) {
-				// 何もしない
-			} else {
-				puyoState.setRotate(rotate);
+				puyoState.setRow(1);
 			}
+			puyoState.setRotate(rotate);
 			MainFrame.keyState[MainFrame.ROTATE] = false;
 		} else if (MainFrame.keyState[MainFrame.RROTATE]) {
 			Rotate rotate = puyoState.getRotate();
@@ -85,12 +84,11 @@ public class PuyoPuyoAIImpl implements PuyoPuyoAI {
 				break;
 			}
 			if (rotate == Rotate.R0 && row == Box.ROW - 1) {
-				// 何もしない
+				puyoState.setRow(Box.ROW - 2);
 			} else if (rotate == Rotate.R180 && row == 0) {
-				// 何もしない
-			} else {
-				puyoState.setRotate(rotate);
+				puyoState.setRow(1);
 			}
+			puyoState.setRotate(rotate);
 			MainFrame.keyState[MainFrame.RROTATE] = false;
 		} else {
 			return null;
