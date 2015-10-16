@@ -89,7 +89,7 @@ public class PuyoPuyoClient {
 			state = State.GAMING;
 			if (game != null) {
 				Box tmpbox = game.selectBox(user.getName());
-				if (box == null || tmpbox.getSequence() != box.getSequence()) {
+				if (box == null || tmpbox.getSequence() != box.getSequence() || tmpbox.getOjmCount() != box.getOjmCount()) {
 					box = tmpbox;
 					createAction(message);
 				}

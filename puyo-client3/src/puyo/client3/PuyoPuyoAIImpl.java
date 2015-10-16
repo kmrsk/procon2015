@@ -49,14 +49,9 @@ public class PuyoPuyoAIImpl implements PuyoPuyoAI {
 		System.out.println("createAction AI");
 		Box box = game.selectBox(user.getName());
 		Action action = new Action();
-		Puyo[][] arr = new Puyo[Box.ROW][Box.RANK];
-		box.createPuyoArray(arr);
 
-		Cluster currentPuyo = box.getCurrentPuyo().getCluster();
-		Cluster nextPuyo = box.getNextPuyo();
-		
 		// 探索
-		PuyoState puyoState = detectPutState(arr, currentPuyo, nextPuyo);
+		PuyoState puyoState = detectPutState(box);
 		
 		if (puyoState == null) {
 			puyoState = box.getCurrentPuyo();
@@ -69,21 +64,32 @@ public class PuyoPuyoAIImpl implements PuyoPuyoAI {
 	}
 
 	// 探索
-	private PuyoState detectPutState(Puyo[][] arr, Cluster currentPuyo, Cluster nextPuyo) {
+	private PuyoState detectPutState(Box box) {
+		Puyo[][] arr = new Puyo[Box.ROW][Box.RANK];
+		box.createPuyoArray(arr);
+
+		Cluster currentPuyo = box.getCurrentPuyo().getCluster();
+		Cluster nextPuyo = box.getNextPuyo();
+
 		PuyoState maxPuyoState = null;
 		int maxPoint = Integer.MIN_VALUE;
 
+		PuyoState maxPuyoStateOjm = null;
+		int maxPointOjm = Integer.MIN_VALUE;
+
 		// 置ける個所それぞれについて
-		ArrayList<PuyoState> puyoStateList = enumulatePutablePosition(arr, currentPuyo);
+		ArrayList<PuyoState> puyoStateList = enumulatePutablePosition(arr, currentPuyo, box.getCurrentPuyo().getRank());
 		for (PuyoState p : puyoStateList) {
 			Puyo[][] nextArr = copyPuyoArr(arr);
 
 			// ぷよを置く
-			int point = putPuyo(nextArr, p);
+			int pointPut = putPuyo(nextArr, p);
 
 			// 次を探索
-			point += detectNext(nextArr, nextPuyo);
+			int pointDetect = detectNext(nextArr, nextPuyo);
 			
+			int point = pointPut + pointDetect;
+
 			//System.out.printf("%d,%d,%s:%d\n", p.getRow(), p.getRank(), p.getRotate(), point);
 
 			// 最大の評価値を記録
@@ -91,8 +97,19 @@ public class PuyoPuyoAIImpl implements PuyoPuyoAI {
 				maxPuyoState = p;
 				maxPoint = point;
 			}
+			
+			if (pointPut > maxPointOjm) {
+				maxPuyoStateOjm = p;
+				maxPointOjm = pointPut;
+			}
 		}
-		
+
+		// おじゃまぷよがあるとき発火を優先
+		if (maxPointOjm > 0 && box.getOjmCount() / 70 > 1) {
+			// 1つ目のぷよの連鎖のみで評価
+			return maxPuyoStateOjm;
+		}
+
 		//System.out.printf("%d,%d,%s:%d\n", maxPuyoState.getRow(), maxPuyoState.getRank(), maxPuyoState.getRotate(), maxPoint);
 		return maxPuyoState;
 	}
@@ -102,7 +119,7 @@ public class PuyoPuyoAIImpl implements PuyoPuyoAI {
 		int maxPoint = Integer.MIN_VALUE;
 
 		// 置ける個所それぞれについて
-		ArrayList<PuyoState> nextPuyoStateList = enumulatePutablePosition(arr, p);
+		ArrayList<PuyoState> nextPuyoStateList = enumulatePutablePosition(arr, p, Box.RANK - 1);
 		for (PuyoState nextPuyoState : nextPuyoStateList) {
 			Puyo[][] nextArr = copyPuyoArr(arr);
 			
@@ -224,12 +241,16 @@ public class PuyoPuyoAIImpl implements PuyoPuyoAI {
 	}
 
 	// 置ける個所を列挙
-	private ArrayList<PuyoState> enumulatePutablePosition(Puyo[][] arr, Cluster currentPuyo) {
+	private ArrayList<PuyoState> enumulatePutablePosition(Puyo[][] arr, Cluster currentPuyo, int rank) {
 		ArrayList<PuyoState> puyoStateList = new ArrayList<PuyoState>();
+		
+		if (rank == 0) {
+			return puyoStateList;
+		}
 
 		int row;
 		for (row = 3; row >= 0; row--) {
-			if (arr[row][Box.RANK - 2] != Puyo.NONE) {
+			if (arr[row][rank - 1] != Puyo.NONE) {
 				break;
 			}
 		}
@@ -242,7 +263,7 @@ public class PuyoPuyoAIImpl implements PuyoPuyoAI {
 		row++;
 
 		// row
-		for (; row < 6 && arr[row][Box.RANK - 2] == Puyo.NONE; row++) {
+		for (; row < 6 && arr[row][rank - 1] == Puyo.NONE; row++) {
 			// 回転パターン
 			int rotate_upper_bound = ALL_ROTATE.length;
 			// 同色の場合2パターンに制限
@@ -253,20 +274,20 @@ public class PuyoPuyoAIImpl implements PuyoPuyoAI {
 				Rotate rotate = ALL_ROTATE[i];
 				
 				if (rotate == Rotate.R0) {
-					if (row == 5 || arr[row + 1][Box.RANK - 2] != Puyo.NONE) {
+					if (row == 5 || arr[row + 1][rank - 1] != Puyo.NONE) {
 						continue;
 					}
 				} else if (rotate == Rotate.R180) {
-					if (row == 0 || arr[row - 1][Box.RANK - 2] != Puyo.NONE) {
+					if (row == 0 || arr[row - 1][rank - 1] != Puyo.NONE) {
 						continue;
 					}
 				}
 				
-				int rank = Box.RANK - 1;
+				int rank2 = rank;
 				if (rotate == Rotate.R270) {
-					rank--;
+					rank2--;
 				}
-				PuyoState puyoState = new PuyoState(currentPuyo, rotate, row, rank);
+				PuyoState puyoState = new PuyoState(currentPuyo, rotate, row, rank2);
 				
 				// 置ける場所リストに追加
 				puyoStateList.add(puyoState);
