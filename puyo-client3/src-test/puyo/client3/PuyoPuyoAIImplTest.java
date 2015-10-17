@@ -9,6 +9,7 @@ import java.util.List;
 import org.junit.Test;
 
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
 import puyo.data.Box;
 import puyo.data.Cluster;
@@ -21,15 +22,20 @@ public class PuyoPuyoAIImplTest {
 	private static Gson gson = new Gson();
 	
 	private PuyoState callDetectPutState(Puyo[][] arr, Cluster currentPuyo, Cluster nextPuyo) {
-		PuyoPuyoAIImpl ai = new PuyoPuyoAIImpl();
-
-		Box box = new Box();
 		List<Puyo> stack = new ArrayList<>();
 		for (int rank = 0; rank < Box.RANK; rank++) {
 			for (int row = 0; row < Box.ROW; row++) {
 				stack.add(arr[row][rank]);
 			}
 		}
+
+		return callDetectPutState(stack, currentPuyo, nextPuyo);
+	}
+
+	private PuyoState callDetectPutState(List<Puyo> stack, Cluster currentPuyo, Cluster nextPuyo) {
+		PuyoPuyoAIImpl ai = new PuyoPuyoAIImpl();
+
+		Box box = new Box();
 		box.setStack(stack);
 		box.setCurrentPuyo(new PuyoState(currentPuyo, Rotate.R0, 2, Box.RANK - 1));
 		box.setNextPuyo(nextPuyo);
@@ -45,45 +51,68 @@ public class PuyoPuyoAIImplTest {
 
 	@Test
 	public void test1() {
-		Puyo[][] arr = gson.fromJson("[[\"GREEN\",\"YELLOW\",\"BLUE\",\"PURPLE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\"],[\"YELLOW\",\"YELLOW\",\"PURPLE\",\"YELLOW\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\"],[\"GREEN\",\"RED\",\"YELLOW\",\"YELLOW\",\"GREEN\",\"PURPLE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\"],[\"GREEN\",\"GREEN\",\"RED\",\"RED\",\"RED\",\"GREEN\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\"],[\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\"],[\"RED\",\"BLUE\",\"YELLOW\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\"]]", Puyo[][].class);
+		Puyo[][] arr = gson.fromJson(
+				"[[\"GREEN\",\"YELLOW\",\"BLUE\",\"PURPLE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\"]," +
+				"[\"YELLOW\",\"YELLOW\",\"PURPLE\",\"YELLOW\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\"]," +
+				"[\"GREEN\",\"RED\",\"YELLOW\",\"YELLOW\",\"GREEN\",\"PURPLE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\"]," +
+				"[\"GREEN\",\"GREEN\",\"RED\",\"RED\",\"RED\",\"GREEN\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\"]," +
+				"[\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\"],"+
+				"[\"RED\",\"BLUE\",\"YELLOW\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\"]]",
+				Puyo[][].class);
 		Cluster currentPuyo = new Cluster(Puyo.GREEN, Puyo.BLUE);
 		Cluster nextPuyo = new Cluster(Puyo.PURPLE, Puyo.BLUE);
 		
 		PuyoState puyoState = callDetectPutState(arr, currentPuyo, nextPuyo);
 
-		assertEquals(4, puyoState.getRow());
+		assertEquals(5, puyoState.getRow());
 	}
 
 	@Test
 	public void test2() {
-		Puyo[][] arr = gson.fromJson("[[\"YELLOW\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\"],[\"GREEN\",\"PURPLE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\"],[\"GREEN\",\"PURPLE\",\"PURPLE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\"],[\"RED\",\"RED\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\"],[\"YELLOW\",\"RED\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\"],[\"YELLOW\",\"YELLOW\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\"]]", Puyo[][].class);
-		Cluster currentPuyo = new Cluster(Puyo.YELLOW, Puyo.PURPLE);
-		Cluster nextPuyo = new Cluster(Puyo.GREEN, Puyo.PURPLE);
+		List<Puyo> stack = gson.fromJson(
+				"[\"RED\",\"PURPLE\",\"GREEN\",\"RED\",\"RED\",\"OJM\",\"RED\",\"PURPLE\",\"PURPLE\",\"GREEN\",\"GREEN\",\"GREEN\",\"YELLOW\",\"BLUE\",\"GREEN\",\"PURPLE\",\"PURPLE\",\"NONE\",\"YELLOW\",\"PURPLE\",\"OJM\",\"OJM\",\"PURPLE\",\"NONE\",\"YELLOW\",\"GREEN\",\"GREEN\",\"PURPLE\",\"GREEN\",\"NONE\",\"RED\",\"YELLOW\",\"NONE\",\"PURPLE\",\"BLUE\",\"NONE\",\"RED\",\"YELLOW\",\"NONE\",\"GREEN\",\"OJM\",\"NONE\",\"PURPLE\",\"RED\",\"NONE\",\"NONE\",\"YELLOW\",\"NONE\",\"OJM\",\"OJM\",\"NONE\",\"NONE\",\"YELLOW\",\"NONE\",\"OJM\",\"BLUE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"OJM\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\"]",
+				new TypeToken<ArrayList<Puyo>>(){}.getType());
+		Cluster currentPuyo = new Cluster(Puyo.PURPLE, Puyo.BLUE);
+		Cluster nextPuyo = new Cluster(Puyo.BLUE, Puyo.YELLOW);
+		
+		PuyoState puyoState = callDetectPutState(stack, currentPuyo, nextPuyo);
 
-		PuyoState puyoState = callDetectPutState(arr, currentPuyo, nextPuyo);
-
-		assertEquals(4, puyoState.getRow());
+		assertEquals(2, puyoState.getRow());
 	}
 
 	@Test
-	public void test3() {
-		Puyo[][] arr = gson.fromJson("[[\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\"],[\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\"],[\"PURPLE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\"],[\"BLUE\",\"BLUE\",\"RED\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\"],[\"BLUE\",\"RED\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\"],[\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\"]]", Puyo[][].class);
-		Cluster currentPuyo = new Cluster(Puyo.BLUE, Puyo.GREEN);
-		Cluster nextPuyo = new Cluster(Puyo.BLUE, Puyo.BLUE);
+	public void testRenketsu() {
+		Puyo[][] arr = gson.fromJson(
+				"[[\"RED\",\"RED\",\"GREEN\",\"YELLOW\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\"]," +
+				"[\"BLUE\",\"BLUE\",\"GREEN\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\"]," +
+				"[\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\"]," +
+				"[\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\"]," +
+				"[\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\"]," +
+				"[\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\"]]",
+				Puyo[][].class);
+		Cluster currentPuyo = new Cluster(Puyo.RED, Puyo.PURPLE);
+		Cluster nextPuyo = new Cluster(Puyo.YELLOW, Puyo.YELLOW);
 
 		PuyoState puyoState = callDetectPutState(arr, currentPuyo, nextPuyo);
 
-		assertEquals(4, puyoState.getRow());
+		assertEquals(1, puyoState.getRow());
 	}
 
 	@Test
-	public void test4() {
-		Puyo[][] arr = gson.fromJson("[[\"GREEN\",\"RED\",\"RED\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\"],[\"PURPLE\",\"PURPLE\",\"RED\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\"],[\"RED\",\"RED\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\"],[\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\"],[\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\"],[\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\"]]", Puyo[][].class);
-		Cluster currentPuyo = new Cluster(Puyo.BLUE, Puyo.RED);
-		Cluster nextPuyo = new Cluster(Puyo.GREEN, Puyo.PURPLE);
+	public void testRensaPotential() {
+		Puyo[][] arr = gson.fromJson(
+				"[[\"RED\",\"GREEN\",\"RED\",\"RED\",\"RED\",\"PURPLE\",\"GREEN\",\"PURPLE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\"]," +
+				"[\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\"]," +
+				"[\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\"]," +
+				"[\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\"]," +
+				"[\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\"]," +
+				"[\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\",\"NONE\"]]",
+				Puyo[][].class);
+		Cluster currentPuyo = new Cluster(Puyo.BLUE, Puyo.YELLOW);
+		Cluster nextPuyo = new Cluster(Puyo.YELLOW, Puyo.YELLOW);
 
 		PuyoState puyoState = callDetectPutState(arr, currentPuyo, nextPuyo);
 
-		assertEquals(4, puyoState.getRow());
+		assertEquals(1, puyoState.getRow());
 	}
 }

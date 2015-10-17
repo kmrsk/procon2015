@@ -33,12 +33,12 @@ public class PuyoPuyoAIImpl implements PuyoPuyoAI {
 			{0, 0, 150, 150, 0, 0},
 			{0, 40, 200, 200, 40, 0},
 			{0, 50, 250, 250, 50, 0},
-			{50, 60, 300, 300, 60, 50},
-			{60, 70, 500, 500, 70, 60},
-			{70, 80, 1000, 1000, 80, 70},
-			{80, 90, 5000, 5000, 90, 80},
-			{1000, 1500, 10000, 10000, 1500, 1000},
-			{1500, 2000, 10000, 10000, 2000, 1500},
+			{50, 60, 500, 500, 60, 50},
+			{60, 70, 1000, 1000, 70, 60},
+			{70, 100, 2000, 2000, 100, 70},
+			{80, 500, 5000, 5000, 500, 80},
+			{100, 1500, 10000, 10000, 1500, 100},
+			{150, 2000, 10000, 10000, 2000, 150},
 			};
 
 	public PuyoPuyoAIImpl() {
@@ -104,10 +104,18 @@ public class PuyoPuyoAIImpl implements PuyoPuyoAI {
 			}
 		}
 
-		// おじゃまぷよがあるとき発火を優先
-		if (maxPointOjm > 0 && box.getOjmCount() / 70 > 1) {
-			// 1つ目のぷよの連鎖のみで評価
-			return maxPuyoStateOjm;
+		if (maxPointOjm > 0) {
+			// おじゃまぷよがあるとき発火を優先
+			if (box.getOjmCount() / 70 > 1) {
+				// 1つ目のぷよの連鎖のみで評価
+				return maxPuyoStateOjm;
+			}
+			
+			// 高さが一定以上のとき発火を優先
+			int pointHeight = evalHeight(arr);
+			if (pointHeight < -3000) {
+				return maxPuyoStateOjm;
+			}
 		}
 
 		//System.out.printf("%d,%d,%s:%d\n", maxPuyoState.getRow(), maxPuyoState.getRank(), maxPuyoState.getRotate(), maxPoint);
@@ -149,6 +157,9 @@ public class PuyoPuyoAIImpl implements PuyoPuyoAI {
 		
 		// 連結の評価
 		point += evalRenketsu(arr);
+		
+		// 連鎖可能性の評価
+		point += evalRensaPotential(arr) / 2;
 
 		return point;
 	}
@@ -205,12 +216,20 @@ public class PuyoPuyoAIImpl implements PuyoPuyoAI {
 					}
 					
 					if (row > 0) {
-						// 左下方向に同色があるか
-						for (int rank2 = rank - 1; rank2 >= 0; rank2--) {
+						// 左下方向4つ以内に同色があるか
+						for (int rank2 = rank - 1; rank2 >= 0 && rank2 >= rank - 4; rank2--) {
 							if (arr[row - 1][rank2] == color && arr[row - 1][rank2 + 1] != color) {
+								// その下方向の連結
+								int rank3 = rank2 - 1;
+								for (; rank3 >= 0; rank3--) {
+									if (arr[row -1][rank3] != color) {
+										break;
+									}
+								}
+
 								// その右上方向の連結が消えた場合に連結するか
 								int rightRenketsu = 1;
-								for (int rank4 = rank2; rank4 < rank - 1; rank4++) {
+								for (int rank4 = rank3 + 1; rank4 < rank - 1; rank4++) {
 									if (arr[row][rank4] == arr[row][rank4 + 1]) {
 										rightRenketsu++;
 									}
@@ -223,6 +242,7 @@ public class PuyoPuyoAIImpl implements PuyoPuyoAI {
 						}
 					}
 
+
 					int renketsu = checkErase(arr, checked, color, row, rank) - 1;
 					point += renketsu * 200 + samecolorUnder * 100 + samecolorLeft * 100;
 				}
@@ -230,7 +250,77 @@ public class PuyoPuyoAIImpl implements PuyoPuyoAI {
 		}
 		return point;
 	}
+	
+	// 連鎖可能性の評価
+	private int evalRensaPotential(Puyo[][] arr) {
+		// 隣が空白のぷよが消えた場合に連鎖するかを評価
+		
+		int point = 0;
+		boolean checked[][] = new boolean[Box.ROW][Box.RANK];
 
+		for (int row = 0; row < Box.ROW; row++) {
+			for (int rank = 0; rank < Box.RANK; rank++) {
+				if (!checked[row][rank] && arr[row][rank] != Puyo.NONE && arr[row][rank] != Puyo.OJM) {
+					// 隣に空白があるか
+					boolean neighborNone = false;
+					if (row > 0 && arr[row - 1][rank] == Puyo.NONE) { // 左
+						neighborNone = true;
+					} else if (rank < Box.RANK - 1 && arr[row][rank + 1] == Puyo.NONE) { // 上
+						neighborNone = true;
+					} else if (row < Box.ROW - 1 && arr[row + 1][rank] == Puyo.NONE) { // 右
+						neighborNone = true;
+					}
+					
+					if (neighborNone) {
+						// 消去
+						Puyo[][] nextArr = copyPuyoArr(arr);
+						ArrayList<Integer> fallPosList = new ArrayList<Integer>();
+						erasePotential(nextArr, row, rank, checked, fallPosList);
+						
+						if (fallPosList.size() > 0) {
+							// 連鎖
+							point += fallPuyo(nextArr, fallPosList, 1);
+						}
+					}
+				}
+			}
+		}
+		
+		return point;
+	}
+	
+	// 消去(連鎖可能性チェック用)
+	private void erasePotential(Puyo[][] arr, int row, int rank, boolean checked[][], ArrayList<Integer> fallPosList) {
+		Puyo color = arr[row][rank];
+		arr[row][rank] = Puyo.NONE;
+		checked[row][rank] = true;
+		
+		// 上
+		if (rank < Box.RANK - 1) {
+			if (arr[row][rank + 1] == color) {
+				erasePotential(arr, row, rank + 1, checked, fallPosList);
+			} else {
+				// 上が異なる色
+				if (arr[row][rank + 1] != Puyo.NONE) {
+					// 落下位置追加
+					fallPosList.add(posToInt(row, rank + 1));
+				}
+			}
+		}
+		// 下
+		if (rank > 0 && arr[row][rank - 1] == color) {
+			erasePotential(arr, row, rank - 1, checked, fallPosList);
+		}
+		// 左
+		if (row > 0 && arr[row - 1][rank] == color) {
+			erasePotential(arr, row - 1, rank, checked, fallPosList);
+		}
+		// 右
+		if (row < Box.ROW - 1 && arr[row + 1][rank] == color) {
+			erasePotential(arr, row + 1, rank, checked, fallPosList);
+		}
+	}
+	
 	private Puyo[][] copyPuyoArr(Puyo[][] arr) {
 		// arrをコピー
 		Puyo[][] nextArr = new Puyo[Box.ROW][];
