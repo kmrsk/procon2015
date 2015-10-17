@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="game" default="all" basedir=".">
+	<property file="jar.properties" />
+	<target name="all" depends="compile,jar" />
+	<target name="compile">
+		<delete dir="${project.dir}/bin" />
+		<mkdir dir="${project.dir}/bin" />
+		<javac destdir="${project.dir}/bin" classpath="${project.dir}/../puyodata/lib/gson-2.3.1.jar;${project.dir}/../puyodata/jar/puyo-data.jar" source="1.8" encoding="UTF-8">
+			<src path="${project.dir}/src" />
+		</javac>
+	</target>
+	<target name="jar">
+		<jar basedir="${project.dir}/bin" jarfile="${project.dir}/jar/puyo-client3.jar">
+			<manifest>
+				<attribute name="Main-Class" value="puyo.client3.ClientMain"/>
+				<attribute name="Class-Path" value="lib/gson-2.3.1.jar lib/puyo-data.jar"/>
+			</manifest>
+		</jar>
+	</target>
+</project>
