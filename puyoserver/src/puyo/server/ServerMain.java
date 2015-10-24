@@ -5,6 +5,8 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketAddress;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import puyo.common.Pair;
 import puyo.common.Tuple;
@@ -75,12 +77,33 @@ public enum ServerMain {
 	}
 
 	public static void main(String[] args) {
-		if (args.length > 0) {
-			int speed = Integer.parseInt(args[0]);
-			PuyoPuyoMaster.FALL_MAX = (int) Math.pow(2, speed + 4);
-			System.out.println("speed:" + PuyoPuyoMaster.FALL_MAX);
+		Pattern p1 = Pattern.compile("-speed=(\\d+)");
+		Pattern p2 = Pattern.compile("-frate=(\\d+)");
+		Pattern p3 = Pattern.compile("-fmax=(\\d+)");
+		// フレームレート
+		int frate = 60;
+		// 最大フレーム
+		int fmax = 60 * 5 * 60;
+		for (String str : args) {
+			Matcher m = p1.matcher(str);
+			if (m.find()) {
+				int speed = Integer.parseInt(m.group(1));
+				PuyoPuyoMaster.FALL_MAX = (int) Math.pow(2, speed + 4);
+				System.out.println("speed:" + speed);
+			}
+			m = p2.matcher(str);
+			if (m.find()) {
+				frate = Integer.parseInt(m.group(1));
+				System.out.println("frate:" + frate);
+			}
+			m = p3.matcher(str);
+			if (m.find()) {
+				fmax = Integer.parseInt(m.group(1));
+				System.out.println("fmax:" + fmax);
+			}
 		}
 		PuyoPuyoMaster master = new PuyoPuyoMaster();
+		master.setFrameMax(fmax);
 		INSTANCE.setPort(5432);
 		INSTANCE.setMaster(master);
 		new Thread(() -> {
@@ -94,13 +117,14 @@ public enum ServerMain {
 		}).start();
 		PuyoPain canvas = new PuyoPain(500, 400);
 		new PuyoPuyoFrame("ぷよぷよ").start(canvas);
+		final int frameRate = frate;
 		new Thread(() -> {
 			while (true) {
 				try {
 					master.update();
 					INSTANCE.sendUDP();
 					canvas.drawPain(master);
-					Thread.sleep(1000 / 60);
+					Thread.sleep(1000 / frameRate);
 				} catch (Exception e) {
 					throw new RuntimeException(e);
 				}

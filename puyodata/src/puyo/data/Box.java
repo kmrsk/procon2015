@@ -6,7 +6,7 @@ import java.util.List;
 public class Box {
 
 	public static final int ROW = 6;
-	public static final int RANK = 12;
+	public static final int RANK = 13;
 
 	public enum BoxState {
 		READY, DOWN, EFFECT, END
@@ -19,6 +19,7 @@ public class Box {
 	private int score;
 	private FallSpeed fallSpeed;
 	private int ojmCount;
+	private int storageOjmCount;
 	private int fallCount;
 	private int effectCount;
 	private int chainCount;
@@ -87,6 +88,14 @@ public class Box {
 
 	public void setOjmCount(int ojmCount) {
 		this.ojmCount = ojmCount;
+	}
+
+	public int getStorageOjmCount() {
+		return storageOjmCount;
+	}
+
+	public void setStorageOjmCount(int storageOjmCount) {
+		this.storageOjmCount = storageOjmCount;
 	}
 
 	public int getFallCount() {

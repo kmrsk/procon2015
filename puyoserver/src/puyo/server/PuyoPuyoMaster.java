@@ -70,6 +70,8 @@ public class PuyoPuyoMaster {
 	private PuyoEx[][] puyoArray1;
 	private PuyoEx[][] puyoArray2;
 	private String loser;
+	private int frameMax = 0;
+	private int frameCount = 0;
 
 	public PuyoPuyoMaster() {
 		init();
@@ -77,6 +79,7 @@ public class PuyoPuyoMaster {
 
 	public void init() {
 		state = State.READY;
+		frameCount = 0;
 		loser = null;
 		users = new ArrayList<>();
 		receivedBox = Collections.synchronizedList(new ArrayList<>());
@@ -130,12 +133,24 @@ public class PuyoPuyoMaster {
 			receivedBox.clear();
 		}
 		if (state == State.GAMING) {
+			frameCount++;
 			boolean needUpdate = updateBox(game.getBox1(), game.getBox2(), puyoArray1);
 			needUpdate |= updateBox(game.getBox2(), game.getBox1(), puyoArray2);
 			if (needUpdate) {
 				sendUpdate(game);
 			}
+			if (frameCount >= getFrameMax()) {
+				loser = null;
+				endGame();
+			}
 		}
+	}
+
+	private void endGame() {
+		game.getBox1().setState(BoxState.END);
+		game.getBox2().setState(BoxState.END);
+		state = State.END;
+		sendEnd(game);
 	}
 
 	private boolean updateBox(Box box, Box targetBox, PuyoEx[][] puyoArray) {
@@ -200,17 +215,30 @@ public class PuyoPuyoMaster {
 						} else if (box.getOjmCount() > 0) {
 							int e2 = e - box.getOjmCount();
 							box.setOjmCount(0);
-							targetBox.setOjmCount(targetBox.getOjmCount() + e2);
+							if (box.getStorageOjmCount() >= e2) {
+								box.setStorageOjmCount(box.getStorageOjmCount() - e2);
+								e2 = 0;
+							} else if (box.getStorageOjmCount() > 0) {
+								e2 = e2 - box.getStorageOjmCount();
+								box.setStorageOjmCount(0);
+							}
+							targetBox.setStorageOjmCount(targetBox.getStorageOjmCount() + e2);
+							//targetBox.setOjmCount(targetBox.getOjmCount() + e2);
 						} else {
-							targetBox.setOjmCount(targetBox.getOjmCount() + e);
+							if (box.getStorageOjmCount() >= e) {
+								box.setStorageOjmCount(box.getStorageOjmCount() - e);
+								e = 0;
+							} else if (box.getStorageOjmCount() > 0) {
+								e = e - box.getStorageOjmCount();
+								box.setStorageOjmCount(0);
+							}
+							targetBox.setStorageOjmCount(targetBox.getStorageOjmCount() + e);
+							//targetBox.setOjmCount(targetBox.getOjmCount() + e);
 						}
 					} else if (isEnd(box, puyoArray)) {
 						loser = box.getName();
 						box.setChainCount(0);
-						game.getBox1().setState(BoxState.END);
-						game.getBox2().setState(BoxState.END);
-						state = State.END;
-						sendEnd(game);
+						endGame();
 						needUpdate = true;
 					} else {
 						// 消去処理終了後
@@ -226,6 +254,11 @@ public class PuyoPuyoMaster {
 							box.setState(BoxState.DOWN);
 							box.setFallCount(FALL_MAX);
 							box.setEffectCount(0);
+						}
+						// 相手に送るおじゃまぷよを確定する。
+						if (targetBox.getStorageOjmCount() > 0) {
+							targetBox.setOjmCount(targetBox.getOjmCount() + targetBox.getStorageOjmCount());
+							targetBox.setStorageOjmCount(0);
 						}
 					}
 					updatePuyoFromPuyoArray(box, puyoArray);
@@ -246,12 +279,12 @@ public class PuyoPuyoMaster {
 	}
 
 	private boolean isEnd(Box box, PuyoEx[][] puyoArray) {
-		if (puyoArray[Box.ROW / 2 - 1][Box.RANK - 1].puyo != Puyo.NONE
-				&& puyoArray[Box.ROW / 2 - 1][Box.RANK - 1].type == PuyoType.STATIC)
+		if (puyoArray[Box.ROW / 2 - 1][Box.RANK - 2].puyo != Puyo.NONE
+				&& puyoArray[Box.ROW / 2 - 1][Box.RANK - 2].type == PuyoType.STATIC)
 			return true;
 
-		//if (puyoArray[Box.ROW / 2][Box.RANK - 1].puyo != Puyo.NONE
-		//		&& puyoArray[Box.ROW / 2][Box.RANK - 1].type == PuyoType.STATIC)
+		//if (puyoArray[Box.ROW / 2][Box.RANK - 2].puyo != Puyo.NONE
+		//		&& puyoArray[Box.ROW / 2][Box.RANK - 2].type == PuyoType.STATIC)
 		//	return true;
 		return false;
 	}
@@ -539,7 +572,7 @@ public class PuyoPuyoMaster {
 		box.setSequence(box.getSequence() + 1);
 		// 次のぷよを取得
 		Cluster np = getCluster(box.getSequence());
-		box.setCurrentPuyo(new PuyoState(np, Rotate.R0, Box.ROW / 2 - 1, Box.RANK - 1));
+		box.setCurrentPuyo(new PuyoState(np, Rotate.R0, Box.ROW / 2 - 1, Box.RANK - 2));
 		// 次の次のぷよを取得
 		Cluster nnp = getCluster(box.getSequence() + 1);
 		box.setNextPuyo(nnp);
@@ -798,4 +831,13 @@ public class PuyoPuyoMaster {
 	public PuyoEx[][] getPuyoArray2() {
 		return puyoArray2;
 	}
+
+	public int getFrameMax() {
+		return frameMax;
+	}
+
+	public void setFrameMax(int frameMax) {
+		this.frameMax = frameMax;
+	}
+
 }

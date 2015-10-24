@@ -29,6 +29,7 @@ public class PuyoPain extends JPanel {
 	private Map<Integer, BufferedImage> chainImages;
 	private BufferedImage win;
 	private BufferedImage lose;
+	private BufferedImage draw;
 	private BufferedImage puyopuyobg;
 	private BufferedImage number;
 
@@ -128,7 +129,7 @@ public class PuyoPain extends JPanel {
 	private void drawPainBox(Box box, PuyoPuyoMaster.PuyoEx[][] puyoArray, int x, String loser) {
 		drawText(box.getName(), 0xffffffff, x, 45);
 		for (int i = 0; i < Box.ROW; i++) {
-			for (int j = 0; j < Box.RANK; j++) {
+			for (int j = 0; j < Box.RANK - 1; j++) {
 				if (puyoArray[i][j] != null && puyoArray[i][j].puyo != Puyo.NONE) {
 					int slip = (box.getFallCount()) * 25 / PuyoPuyoMaster.FALL_MAX;
 					if (puyoArray[i][j].type == PuyoType.STATIC) {
@@ -138,11 +139,15 @@ public class PuyoPain extends JPanel {
 				}
 			}
 		}
-		if (loser != null) {
-			if (loser.equals(box.getName())) {
-				drawImage(getLose(), 0, 0, 112, 50, x, 150, 112, 50);
+		if (box.getState() == BoxState.END) {
+			if (loser != null) {
+				if (loser.equals(box.getName())) {
+					drawImage(getLose(), 0, 0, 112, 50, x, 150, 112, 50);
+				} else {
+					drawImage(getWin(), 0, 0, 112, 50, x, 150, 112, 50);
+				}
 			} else {
-				drawImage(getWin(), 0, 0, 112, 50, x, 150, 112, 50);
+				drawImage(getDraw(), 0, 0, 112, 50, x, 150, 112, 50);
 			}
 		}
 	}
@@ -223,6 +228,13 @@ public class PuyoPain extends JPanel {
 		} catch (Exception e) {
 			throw new RuntimeException(key, e);
 		}
+	}
+
+	private BufferedImage getDraw() {
+		if (draw == null) {
+			draw = loadImage("draw.png");
+		}
+		return draw;
 	}
 
 	private BufferedImage getWin() {
