@@ -26,30 +26,72 @@ public class PuyoPuyoAIImpl implements PuyoPuyoAI {
 	public static final int[] CONNECT_BONUS = { 0, 0, 0, 0, 0, 2, 3, 4, 5, 6, 7, 10, 10, 10, 10, 10, 10, 10, 10, 10,
 			10, 10, 10, 10, 10, 10, 10 };
 	public static final int[] COLOR_BONUS = { 0, 0, 3, 6, 12, 24 };
+	
+	// 1ぷよ消去あたりのポイント
+	static private int pointErase = 10;
 
 	// 積まれたぷよの高さに対するペナルティ(位置ごと)
 	static private int heightPenalty[][] = {
-			{ 0, 0, 0, 0, 0, 0 },
-			{ 0, 0, 10, 10, 0, 0 },
-			{ 0, 0, 50, 50, 0, 0 },
-			{ 0, 0, 150, 150, 0, 0 },
-			{ 0, 40, 200, 200, 40, 0 },
-			{ 0, 50, 250, 250, 50, 0 },
-			{ 50, 60, 500, 500, 60, 50 },
-			{ 60, 70, 1000, 1000, 70, 60 },
-			{ 70, 100, 2000, 2000, 100, 70 },
-			{ 80, 500, 5000, 5000, 500, 80 },
-			{ 100, 1500, 10000, 10000, 1500, 100 },
-			{ 150, 2000, 10000, 10000, 2000, 150 },
-			{ 150, 2000, 10000, 10000, 2000, 150 },
-	};
+			{0, 0, 0, 0, 0, 0},
+			{0, 0, 10, 10, 0, 0},
+			{0, 0, 50, 50, 0, 0},
+			{0, 0, 150, 150, 0, 0},
+			{0, 40, 200, 200, 40, 0},
+			{0, 50, 250, 250, 50, 0},
+			{50, 60, 500, 500, 60, 50},
+			{60, 70, 1000, 1000, 70, 60},
+			{70, 100, 2000, 2000, 100, 70},
+			{80, 500, 5000, 5000, 500, 80},
+			{100, 1500, 10000, 10000, 1500, 100},
+			{150, 2000, 10000, 10000, 2000, 150},
+			{150, 2000, 10000, 10000, 2000, 150},
+			};
+	
+	// 発火を優先する高さ閾値
+	static private int threashold = 3000;
+	
+	// 連結の評価値
+	static private int pointRenketsu = 200;
+	static private int pointSamecolorUnder = 100;
+	static private int pointSamecolorLeft = 100;
+	
+	// 連鎖可能性の評価値
+	static private int pointRensaPotensial = 5;
+	
+
+	// パラメータ設定(機械学習用)
+	void setParam(String id, int val) {
+		if (id.startsWith("height")) {
+			int rank = Integer.parseInt(id.substring(6,7));
+			int row = Integer.parseInt(id.substring(7,8));
+			heightPenalty[rank][row] = val;
+		} else {
+			switch (id) {
+			case "threshold":
+				threashold = val;
+				break;
+			case "renketsu":
+				pointRenketsu = val;
+				break;
+			case "samecolorUnder":
+				pointSamecolorUnder = val;
+				break;
+			case "samecolorLeft":
+				pointSamecolorLeft = val;
+				break;
+			case "rensaPotensial":
+				pointRensaPotensial = val;
+				break;
+			}
+		}
+	}
 
 	public PuyoPuyoAIImpl() {
 	}
 
 	@Override
 	public Action createAction(Game game, User user) {
-		System.out.println("createAction AI");
+		//System.out.println("createAction AI");
 		Box box = game.selectBox(user.getName());
 		Action action = new Action();
 
@@ -86,7 +128,7 @@ public class PuyoPuyoAIImpl implements PuyoPuyoAI {
 			Puyo[][] nextArr = copyPuyoArr(arr);
 
 			// ぷよを置く
-			int pointPut = putPuyo(nextArr, p);
+			int pointPut = putPuyo(nextArr, p) * pointErase;
 
 			// 次を探索
 			int pointDetect = detectNext(nextArr, nextPuyo);
@@ -116,7 +158,7 @@ public class PuyoPuyoAIImpl implements PuyoPuyoAI {
 
 			// 高さが一定以上のとき発火を優先
 			int pointHeight = evalHeight(arr);
-			if (pointHeight < -3000) {
+			if (pointHeight < -threashold) {
 				return maxPuyoStateOjm;
 			}
 		}
@@ -135,7 +177,7 @@ public class PuyoPuyoAIImpl implements PuyoPuyoAI {
 			Puyo[][] nextArr = copyPuyoArr(arr);
 
 			// ぷよを置く
-			int point = putPuyo(nextArr, nextPuyoState);
+			int point = putPuyo(nextArr, nextPuyoState) * pointErase;
 
 			// 評価関数
 			point += eval(nextArr);
@@ -161,7 +203,7 @@ public class PuyoPuyoAIImpl implements PuyoPuyoAI {
 		point += evalRenketsu(arr);
 
 		// 連鎖可能性の評価
-		point += evalRensaPotential(arr) / 2;
+		point += evalRensaPotential(arr) * pointRensaPotensial;
 
 		return point;
 	}
@@ -245,7 +287,7 @@ public class PuyoPuyoAIImpl implements PuyoPuyoAI {
 					}
 
 					int renketsu = checkErase(arr, checked, color, row, rank) - 1;
-					point += renketsu * 200 + samecolorUnder * 100 + samecolorLeft * 100;
+					point += renketsu * pointRenketsu + samecolorUnder * pointSamecolorUnder + samecolorLeft * pointSamecolorLeft;
 				}
 			}
 		}
@@ -486,8 +528,8 @@ public class PuyoPuyoAIImpl implements PuyoPuyoAI {
 		}
 
 		// 点数計算
-		point += sumCnt * 10 * (CHAIN_BONUS[rensa] + connBonus + COLOR_BONUS[set.size()]);
-
+		point += sumCnt * (CHAIN_BONUS[rensa] + connBonus + COLOR_BONUS[set.size()]);
+		
 		// 連鎖
 		if (newFallPosList.size() > 0) {
 			point += fallPuyo(arr, newFallPosList, rensa + 1);

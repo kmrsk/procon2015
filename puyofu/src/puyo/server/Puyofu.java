@@ -145,8 +145,8 @@ public class Puyofu {
 		}
 		boxPrev[index] = box;
 		
-		// 現在のぷよを表示
-		if (box.getChainCount() == 0) {
+		// 現在のぷよを表示(DOWNの場合)
+		if (box.getState() == BoxState.DOWN) {
 			PuyoState currentPuyo = box.getCurrentPuyo();
 			int currentRow = currentPuyo.getRow();
 			int currentRank = currentPuyo.getRank(); 
