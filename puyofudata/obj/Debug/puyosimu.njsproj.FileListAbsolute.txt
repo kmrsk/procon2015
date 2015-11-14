@@ -1,0 +1,2 @@
+H:\home\2015\11_15\puyosimu\obj\Debug\puyosimu.njsprojResolveAssemblyReference.cache
+H:\home\2015\11_15\puyosimu\bin\Microsoft.NodejsTools.WebRole.dll
