@@ -17,7 +17,7 @@ import puyo.data.User;
 import com.google.gson.Gson;
 
 public class PuyoPuyoAIImpl implements PuyoPuyoAI {
-	static private Gson gson = new Gson();
+	//static private Gson gson = new Gson();
 
 	static private Rotate[] ALL_ROTATE = { Rotate.R0, Rotate.R90, Rotate.R180, Rotate.R270 };
 
@@ -27,19 +27,19 @@ public class PuyoPuyoAIImpl implements PuyoPuyoAI {
 			10, 10, 10, 10, 10, 10, 10 };
 	public static final int[] COLOR_BONUS = { 0, 0, 3, 6, 12, 24 };
 	
-	// 1ぷよ消去あたりのポイント
-	static private int pointErase = 10;
+	// 1ぷよ消去あたりのポイント(基準値)
+	static private int pointUnit = 10;
 
 	// 積まれたぷよの高さに対するペナルティ(位置ごと)
 	static private int heightPenalty[][] = {
 			{0, 0, 0, 0, 0, 0},
-			{0, 0, 10, 10, 0, 0},
-			{0, 0, 50, 50, 0, 0},
-			{0, 0, 150, 150, 0, 0},
-			{0, 40, 200, 200, 40, 0},
-			{0, 50, 250, 250, 50, 0},
-			{50, 60, 500, 500, 60, 50},
-			{60, 70, 1000, 1000, 70, 60},
+			{0, 0, 80, 20, 0, 0},
+			{0, 0, 80, 60, 100, 40},
+			{0, 0, 150, 150, 100, 40},
+			{0, 40, 200, 200, 100, 40},
+			{0, 50, 250, 250, 100, 40},
+			{50, 60, 500, 500, 100, 50},
+			{60, 70, 1000, 1000, 100, 60},
 			{70, 100, 2000, 2000, 100, 70},
 			{80, 500, 5000, 5000, 500, 80},
 			{100, 1500, 10000, 10000, 1500, 100},
@@ -48,27 +48,27 @@ public class PuyoPuyoAIImpl implements PuyoPuyoAI {
 			};
 	
 	// 発火を優先する高さ閾値
-	static private int threashold = 3000;
+	static private int threasholdHeight = 3000;
 	
 	// 連結の評価値
-	static private int pointRenketsu = 200;
-	static private int pointSamecolorUnder = 100;
-	static private int pointSamecolorLeft = 100;
+	static private int pointRenketsu = 400;
+	static private int pointSamecolorUnder = 200;
+	static private int pointSamecolorLeft = 140;
 	
 	// 連鎖可能性の評価値
-	static private int pointRensaPotensial = 5;
+	static private int pointRensaPotensial = 1;
 	
 
 	// パラメータ設定(機械学習用)
 	void setParam(String id, int val) {
 		if (id.startsWith("height")) {
-			int rank = Integer.parseInt(id.substring(6,7));
-			int row = Integer.parseInt(id.substring(7,8));
+			int rank = Integer.parseInt(id.substring(6,8));
+			int row = Integer.parseInt(id.substring(8,9));
 			heightPenalty[rank][row] = val;
 		} else {
 			switch (id) {
-			case "threshold":
-				threashold = val;
+			case "thresholdHeight":
+				threasholdHeight = val;
 				break;
 			case "renketsu":
 				pointRenketsu = val;
@@ -109,7 +109,7 @@ public class PuyoPuyoAIImpl implements PuyoPuyoAI {
 	}
 
 	// 探索
-	private PuyoState detectPutState(Box box) {
+	PuyoState detectPutState(Box box) {
 		Puyo[][] arr = new Puyo[Box.ROW][Box.RANK];
 		box.createPuyoArray(arr);
 
@@ -128,7 +128,7 @@ public class PuyoPuyoAIImpl implements PuyoPuyoAI {
 			Puyo[][] nextArr = copyPuyoArr(arr);
 
 			// ぷよを置く
-			int pointPut = putPuyo(nextArr, p) * pointErase;
+			int pointPut = putPuyo(nextArr, p) * pointUnit;
 
 			// 次を探索
 			int pointDetect = detectNext(nextArr, nextPuyo);
@@ -158,7 +158,7 @@ public class PuyoPuyoAIImpl implements PuyoPuyoAI {
 
 			// 高さが一定以上のとき発火を優先
 			int pointHeight = evalHeight(arr);
-			if (pointHeight < -threashold) {
+			if (pointHeight < -threasholdHeight) {
 				return maxPuyoStateOjm;
 			}
 		}
@@ -177,7 +177,7 @@ public class PuyoPuyoAIImpl implements PuyoPuyoAI {
 			Puyo[][] nextArr = copyPuyoArr(arr);
 
 			// ぷよを置く
-			int point = putPuyo(nextArr, nextPuyoState) * pointErase;
+			int point = putPuyo(nextArr, nextPuyoState) * pointUnit;
 
 			// 評価関数
 			point += eval(nextArr);
