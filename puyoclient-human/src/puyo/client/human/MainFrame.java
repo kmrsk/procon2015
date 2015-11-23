@@ -32,18 +32,24 @@ public class MainFrame extends JFrame implements KeyListener {
 	public void keyPressed(KeyEvent e) {
 		switch (e.getKeyChar()) {
 		case '4':
+		case 'a':
 			keyState[LEFT] = true;
 			break;
 		case '6':
+		case 'd':
 			keyState[RIGHT] = true;
 			break;
 		case '2':
+		case 'x':
+		case 'z':
 			keyState[DOWN] = true;
 			break;
 		case '5':
+		case 's':
 			keyState[ROTATE] = true;
 			break;
 		case '8':
+		case 'w':
 			keyState[RROTATE] = true;
 			break;
 		}
