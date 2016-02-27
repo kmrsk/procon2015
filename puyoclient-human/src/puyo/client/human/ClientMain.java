@@ -103,6 +103,7 @@ public enum ClientMain {
 		new Thread(() -> {
 			while (true) {
 				try {
+					frame.poll();
 					client.update();
 					INSTANCE.sendUDP();
 					Thread.sleep(1000 / 60);
