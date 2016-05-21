@@ -5,7 +5,7 @@
 	<target name="compile">
 		<delete dir="${project.dir}/bin" />
 		<mkdir dir="${project.dir}/bin" />
-		<javac destdir="${project.dir}/bin" classpath="${project.dir}/../puyodata/lib/gson-2.3.1.jar;${project.dir}/../puyodata/jar/puyo-data.jar" source="1.8" encoding="UTF-8">
+		<javac destdir="${project.dir}/bin" classpath="${project.dir}/../puyodata/lib/gson-2.3.1.jar;${project.dir}/../puyodata/jar/puyo-data.jar;${project.dir}/lib/jinput-2.0.6.jar;${project.dir}/lib/jutils-1.0.0.jar" source="1.8" encoding="UTF-8">
 			<src path="${project.dir}/src" />
 		</javac>
 	</target>
@@ -13,7 +13,7 @@
 		<jar basedir="${project.dir}/bin" jarfile="${project.dir}/jar/puyoclient-human.jar">
 			<manifest>
 				<attribute name="Main-Class" value="puyo.client.human.ClientMain"/>
-				<attribute name="Class-Path" value="lib/gson-2.3.1.jar lib/puyo-data.jar"/>
+				<attribute name="Class-Path" value="lib/gson-2.3.1.jar lib/puyo-data.jar lib/jinput-2.0.6.jar lib/jutils-1.0.0.jar"/>
 			</manifest>
 		</jar>
 	</target>
